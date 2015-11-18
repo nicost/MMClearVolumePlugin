@@ -1,0 +1,60 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>edu.ucsf.valelab.mmclearvolumeplugin</groupId>
+  <artifactId>MMClearVolumePlugin_</artifactId>
+  <packaging>jar</packaging>
+  <version>0.1-SNAPSHOT</version>
+  <name>ClearVolumePlugin</name>
+  <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
+  <description>An Micro-Manager 2.0 plugin that opens Micro-Manager data in the ClearVolume 3D viewer</description>
+  <properties>
+     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+
+	<repositories>
+		<repository>
+			<id>ClearVolume</id>
+         <url>http://dl.bintray.com/clearvolume/ClearVolume</url>
+		</repository>
+		<repository>
+			<id>CoreMem</id>
+         <url>http://dl.bintray.com/rtlib/CoreMem</url>
+		</repository>
+	</repositories>
+
+  <build>
+     <plugins>
+        <plugin>
+           <groupId>org.apache.maven.plugins</groupId>
+           <artifactId>maven-compiler-plugin</artifactId>
+           <version>3.3</version>
+           <configuration>
+              <source>1.8</source>
+              <target>1.8</target>
+              <downloadSources>true</downloadSources>
+              <downloadJavadocs>true</downloadJavadocs>
+           </configuration>
+        </plugin>
+     </plugins>
+  </build>
+
+  <dependencies>
+    <dependency>
+       <groupId>junit</groupId>
+       <artifactId>junit</artifactId>
+       <scope>test</scope>
+       <version>4.12</version>
+    </dependency>
+    <dependency>
+         <groupId>net.coremem</groupId>
+         <artifactId>CoreMem</artifactId>
+         <version>0.1.4</version>
+      </dependency>
+    <dependency>
+         <groupId>net.clearvolume</groupId>
+         <artifactId>clearvolume</artifactId>
+         <version>1.1.1</version>
+      </dependency>
+  </dependencies>
+</project>
