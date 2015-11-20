@@ -1,26 +1,26 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <groupId>edu.ucsf.valelab.mmclearvolumeplugin</groupId>
-  <artifactId>MMClearVolumePlugin_</artifactId>
-  <packaging>jar</packaging>
-  <version>0.1-SNAPSHOT</version>
-  <name>ClearVolumePlugin</name>
-  <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
-  <description>An Micro-Manager 2.0 plugin that opens Micro-Manager data in the ClearVolume 3D viewer</description>
-  <properties>
-     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+   <modelVersion>4.0.0</modelVersion>
+   <groupId>edu.ucsf.valelab.mmclearvolumeplugin</groupId>
+   <artifactId>MMClearVolumePlugin_</artifactId>
+   <packaging>jar</packaging>
+   <version>0.1-SNAPSHOT</version>
+   <name>ClearVolumePlugin</name>
+   <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
+   <description>An Micro-Manager 2.0 plugin that opens Micro-Manager data in the ClearVolume 3D viewer</description>
+   <properties>
+      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+   </properties>
 
-	<repositories>
-		<repository>
-			<id>ClearVolume</id>
+   <repositories>
+      <repository>
+         <id>ClearVolume</id>
          <url>http://dl.bintray.com/clearvolume/ClearVolume</url>
-		</repository>
-		<repository>
-			<id>CoreMem</id>
+      </repository>
+      <repository>
+         <id>CoreMem</id>
          <url>http://dl.bintray.com/rtlib/CoreMem</url>
-		</repository>
+      </repository>
       <repository>
          <id>project.local</id>
          <name>project</name>
@@ -30,47 +30,73 @@
          <id>imagej.public</id>
          <url>http://maven.imagej.net/content/groups/public</url>
       </repository>
-	</repositories>
+      <repository>
+         <id>clojars.org</id>
+         <url>http://clojars.org/repo</url>
+      </repository>
+   </repositories>
                                                         
 
-  <build>
-     <plugins>
-        <plugin>
-           <groupId>org.apache.maven.plugins</groupId>
-           <artifactId>maven-compiler-plugin</artifactId>
-           <version>3.3</version>
-           <configuration>
-              <source>1.8</source>
-              <target>1.8</target>
-              <downloadSources>true</downloadSources>
-              <downloadJavadocs>true</downloadJavadocs>
-           </configuration>
-        </plugin>
-     </plugins>
-  </build>
+   <build>
+      <plugins>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-compiler-plugin</artifactId>
+            <version>3.3</version>
+            <configuration>
+               <source>1.8</source>
+               <target>1.8</target>
+               <downloadSources>true</downloadSources>
+               <downloadJavadocs>true</downloadJavadocs>
+            </configuration>
+         </plugin>
+      </plugins>
+   </build>
 
-  <dependencies>
-    <dependency>
-       <groupId>junit</groupId>
-       <artifactId>junit</artifactId>
-       <scope>test</scope>
-       <version>4.12</version>
-    </dependency>
-    <dependency>
+   <dependencies>
+      <dependency>
+         <groupId>junit</groupId>
+         <artifactId>junit</artifactId>
+         <scope>test</scope>
+         <version>4.12</version>
+      </dependency>
+      <dependency>
          <groupId>org.scijava</groupId>
          <artifactId>scijava-common</artifactId>
          <version>2.49.0</version>
-     </dependency>
-    <dependency>
+      </dependency>
+      <dependency>
          <groupId>net.coremem</groupId>
          <artifactId>CoreMem</artifactId>
          <version>0.1.4</version>
-     </dependency>
-    <dependency>
+      </dependency>
+      <dependency>
          <groupId>net.clearvolume</groupId>
          <artifactId>clearvolume</artifactId>
          <version>1.1.1</version>
       </dependency>
+      <dependency>
+         <groupId>net.clearvolume</groupId>
+         <artifactId>cleargl</artifactId>
+         <version>1.0.3</version>
+      </dependency>
+      <dependency>
+         <groupId>net.clearvolume</groupId>
+         <artifactId>clearcuda</artifactId>
+         <version>0.9.4</version>
+      </dependency>
+      
+      <dependency>     
+         <groupId>org.jogamp.gluegen</groupId>
+         <artifactId>gluegen-rt-main</artifactId>
+         <version>2.3.2</version>
+      </dependency>
+      <dependency>
+         <groupId>org.jogamp.jogl</groupId>
+         <artifactId>jogl-all-main</artifactId>
+         <version>2.3.2</version>
+      </dependency>
+
       <dependency>
          <groupId>org.micromanager</groupId>
          <artifactId>MMJ_</artifactId>
@@ -82,6 +108,11 @@
          <version>2.0.0.0</version>
       </dependency>
       <dependency>
+         <groupId>org.micromanager</groupId>
+         <artifactId>MMAcqEngine</artifactId>
+         <version>2.0.0.0</version>
+      </dependency>
+      <dependency>
          <groupId>net.imagej</groupId>                        
          <artifactId>ij</artifactId>
          <version>1.49v</version>
@@ -89,7 +120,7 @@
       <dependency>
          <groupId>org.beanshell</groupId>                        
          <artifactId>bsh</artifactId>
-         <version>1.3.0</version>
+         <version>2.0b4</version>
       </dependency>
       <dependency>
          <groupId>com.google.guava</groupId>                        
@@ -101,5 +132,20 @@
          <artifactId>rsyntaxtextarea</artifactId>
          <version>2.5.2</version>
       </dependency>
-  </dependencies>
+      <dependency>
+         <groupId>com.bulenkov</groupId>                        
+         <artifactId>iconloader</artifactId>
+         <version>1.0.0</version>
+      </dependency>
+      <dependency>
+         <groupId>org.clojure</groupId>
+         <artifactId>clojure</artifactId>
+         <version>1.3.0</version>
+      </dependency>
+      <dependency>
+         <groupId>org.clojars.ollez</groupId>
+         <artifactId>clooj</artifactId>
+         <version>0.3.11</version>
+      </dependency>
+   </dependencies>
 </project>
