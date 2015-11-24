@@ -50,6 +50,37 @@
                <downloadJavadocs>true</downloadJavadocs>
             </configuration>
          </plugin>
+         <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-shade-plugin</artifactId>
+            <version>2.3</version>
+            <executions>
+               <execution>
+                  <phase>package</phase>
+                  <goals>
+                     <goal>shade</goal>
+                  </goals>
+                  <configuration>
+                     <artifactSet>
+                        <includes>
+                           <!--             		<include>net.clearvolume:cleargl</include>
+                                            <include>net.clearvolume:clearcuda</include>
+                                            <include>net.clearvolume:clearvolume</include> 
+                           -->
+                           <include>org.jogamp.gluegen:gluegen-rt</include>
+                           <include>org.jogamp.jogl:jogl-all</include>
+                        </includes>
+                     </artifactSet>
+                     <relocations>
+                        <relocation>
+                           <pattern>javax.media.opengl</pattern>
+                           <shadedPattern>cv.javax.media.opengl</shadedPattern>
+                        </relocation>
+                     </relocations>            
+                  </configuration>
+               </execution>
+            </executions>
+         </plugin>
       </plugins>
    </build>
 
@@ -86,17 +117,17 @@
          <version>0.9.4</version>
       </dependency>
       
-      <dependency>     
+      <dependency>
          <groupId>org.jogamp.gluegen</groupId>
-         <artifactId>gluegen-rt-main</artifactId>
-         <version>2.3.2</version>
+         <artifactId>gluegen-rt</artifactId>
+         <version>2.3.1</version>
       </dependency>
       <dependency>
          <groupId>org.jogamp.jogl</groupId>
-         <artifactId>jogl-all-main</artifactId>
-         <version>2.3.2</version>
+         <artifactId>jogl-all</artifactId>
+         <version>2.3.1</version>
       </dependency>
-
+      
       <dependency>
          <groupId>org.micromanager</groupId>
          <artifactId>MMJ_</artifactId>
