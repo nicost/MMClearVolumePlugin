@@ -29,6 +29,8 @@ import org.micromanager.Studio;
 import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
 import org.micromanager.data.Image;
+import org.micromanager.data.Metadata;
+import org.micromanager.data.SummaryMetadata;
 import org.micromanager.display.DisplayWindow;
 
 import org.scijava.plugin.Plugin;
@@ -61,11 +63,14 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
          return;
       }
       Datastore theDatastore = theDisplay.getDatastore();
-      List<String> axes = theDatastore.getAxes();
+      // List<String> axes = theDatastore.getAxes();
       final int nrZ = theDatastore.getAxisLength(Coords.Z);
-
+      int nrCh = theDatastore.getAxisLength(Coords.CHANNEL);
       Image randomImage = theDatastore.getAnyImage();
 
+      // nrCh > 1 does not work yet. Remove once it works and make nrCh final
+      nrCh = 1;
+      
       // creates renderer:
       NativeTypeEnum nte = NativeTypeEnum.UnsignedShort;
       if (randomImage.getBytesPerPixel() == 1) {
@@ -78,41 +83,46 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
                       randomImage.getHeight(),
                       nte,
                       false);
+      lClearVolumeRenderer.setNumberOfRenderLayers(nrCh);
       lClearVolumeRenderer.setTransferFunction(TransferFunctions.getDefault());
       lClearVolumeRenderer.setVisible(true);
 
       final int nrBytesPerImage = randomImage.getWidth() * randomImage.getHeight() *
               randomImage.getBytesPerPixel();
-      
-      final int lResolutionX = randomImage.getWidth();
-      final int lResolutionY = randomImage.getHeight();
-      final int lResolutionZ = nrZ;
 
       // create fragmented memory for each stack that needs sending to CV:
       FragmentedMemory lFragmentedMemory = new FragmentedMemory();
       Coords.CoordsBuilder builder = studio_.data().getCoordsBuilder();
+      final Metadata metadata = randomImage.getMetadata();
+      final SummaryMetadata summary = theDatastore.getSummaryMetadata();
       
-      for (int i = 0; i < nrZ; i++) {
-         //For each image in the stack you build a offheap memory object:
-         OffHeapMemory lOffHeapMemory = OffHeapMemory.allocateBytes(nrBytesPerImage);
-         // copy the array contents to it, we really can’t avoid that copy unfortunately
-         builder = builder.z(i).channel(0).time(0).stagePosition(0);
-         Coords coords = builder.build();
-         Image image = theDatastore.getImage(coords);
-         short[] pix = (short[]) image.getRawPixels();
-         lOffHeapMemory.copyFrom( pix );
-      
-         // add the contiguous memory as fragment:
-         lFragmentedMemory.add(lOffHeapMemory);
+      for (int ch = 0; ch < nrCh; ch++) {
+         for (int i = 0; i < nrZ; i++) {
+            // For each image in the stack build an offheap memory object:
+            OffHeapMemory lOffHeapMemory = OffHeapMemory.allocateBytes(nrBytesPerImage);
+            // copy the array contents to it, we really can’t avoid that copy unfortunately
+            builder = builder.z(i).channel(ch).time(0).stagePosition(0);
+            Coords coords = builder.build();
+            Image image = theDatastore.getImage(coords);
+            short[] pix = (short[]) image.getRawPixels();
+            lOffHeapMemory.copyFrom(pix);
+
+            // add the contiguous memory as fragment:
+            lFragmentedMemory.add(lOffHeapMemory);
+         }
+
+         // pass data to renderer:
+         lClearVolumeRenderer.setVolumeDataBuffer(ch,
+                 lFragmentedMemory,
+                 randomImage.getWidth(),
+                 randomImage.getHeight(),
+                 nrZ);
+         // TODO: correct x and y voxel sizes using aspect ratio
+         lClearVolumeRenderer.setVoxelSize(ch, metadata.getPixelSizeUm(),
+                 metadata.getPixelSizeUm(), summary.getZStepUm());
+         lClearVolumeRenderer.requestDisplay();
       }
 
-      // pass data to renderer:
-      lClearVolumeRenderer.setVolumeDataBuffer(0,
-              lFragmentedMemory,
-              lResolutionX,
-              lResolutionY,
-              lResolutionZ);
-      lClearVolumeRenderer.requestDisplay();
 
       while (lClearVolumeRenderer.isShowing()) {
          try {
