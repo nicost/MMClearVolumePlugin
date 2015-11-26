@@ -21,9 +21,6 @@ import clearvolume.transferf.TransferFunctions;
 import coremem.fragmented.FragmentedMemory;
 import coremem.offheap.OffHeapMemory;
 import coremem.types.NativeTypeEnum;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.micromanager.MenuPlugin;
 import org.micromanager.Studio;
 import org.micromanager.data.Coords;
@@ -31,6 +28,7 @@ import org.micromanager.data.Datastore;
 import org.micromanager.data.Image;
 import org.micromanager.data.Metadata;
 import org.micromanager.data.SummaryMetadata;
+import org.micromanager.display.DisplayManager;
 import org.micromanager.display.DisplayWindow;
 
 import org.scijava.plugin.Plugin;
@@ -57,73 +55,10 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
 
    @Override
    public void onPluginSelected() {
-      DisplayWindow theDisplay = studio_.displays().getCurrentWindow();
-      if (theDisplay == null) {
-         ij.IJ.error("No data set open");
-         return;
-      }
-      Datastore theDatastore = theDisplay.getDatastore();
-      // List<String> axes = theDatastore.getAxes();
-      final int nrZ = theDatastore.getAxisLength(Coords.Z);
-      int nrCh = theDatastore.getAxisLength(Coords.CHANNEL);
-      Image randomImage = theDatastore.getAnyImage();
-
-      // nrCh > 1 does not work yet. Remove once it works and make nrCh final
-      nrCh = 1;
-      
-      // creates renderer:
-      NativeTypeEnum nte = NativeTypeEnum.UnsignedShort;
-      if (randomImage.getBytesPerPixel() == 1) {
-         nte = NativeTypeEnum.UnsignedByte;
-      }
-      final ClearVolumeRendererInterface lClearVolumeRenderer
-              = ClearVolumeRendererFactory.newBestRenderer(
-                      theDisplay.getName() + "-ClearVolume",
-                      randomImage.getWidth(),
-                      randomImage.getHeight(),
-                      nte,
-                      false);
-      lClearVolumeRenderer.setNumberOfRenderLayers(nrCh);
-      lClearVolumeRenderer.setTransferFunction(TransferFunctions.getDefault());
-      lClearVolumeRenderer.setVisible(true);
-
-      final int nrBytesPerImage = randomImage.getWidth() * randomImage.getHeight() *
-              randomImage.getBytesPerPixel();
-
-      // create fragmented memory for each stack that needs sending to CV:
-      FragmentedMemory lFragmentedMemory = new FragmentedMemory();
-      Coords.CoordsBuilder builder = studio_.data().getCoordsBuilder();
-      final Metadata metadata = randomImage.getMetadata();
-      final SummaryMetadata summary = theDatastore.getSummaryMetadata();
-      
-      for (int ch = 0; ch < nrCh; ch++) {
-         for (int i = 0; i < nrZ; i++) {
-            // For each image in the stack build an offheap memory object:
-            OffHeapMemory lOffHeapMemory = OffHeapMemory.allocateBytes(nrBytesPerImage);
-            // copy the array contents to it, we really can’t avoid that copy unfortunately
-            builder = builder.z(i).channel(ch).time(0).stagePosition(0);
-            Coords coords = builder.build();
-            Image image = theDatastore.getImage(coords);
-            short[] pix = (short[]) image.getRawPixels();
-            lOffHeapMemory.copyFrom(pix);
-
-            // add the contiguous memory as fragment:
-            lFragmentedMemory.add(lOffHeapMemory);
-         }
-
-         // pass data to renderer:
-         lClearVolumeRenderer.setVolumeDataBuffer(ch,
-                 lFragmentedMemory,
-                 randomImage.getWidth(),
-                 randomImage.getHeight(),
-                 nrZ);
-         // TODO: correct x and y voxel sizes using aspect ratio
-         lClearVolumeRenderer.setVoxelSize(ch, metadata.getPixelSizeUm(),
-                 metadata.getPixelSizeUm(), summary.getZStepUm());
-         lClearVolumeRenderer.requestDisplay();
-      }
-
-
+      Viewer viewer = new Viewer(studio_);
+      studio_.getDisplayManager().addViewer(viewer);
+   
+      /*
       while (lClearVolumeRenderer.isShowing()) {
          try {
             Thread.sleep(100);
@@ -131,8 +66,9 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
             Logger.getLogger(ClearVolumePlugin.class.getName()).log(Level.SEVERE, null, ex);
          }
       }
+*/
 
-      lClearVolumeRenderer.close();
+     // lClearVolumeRenderer.close();
 
    }
 
