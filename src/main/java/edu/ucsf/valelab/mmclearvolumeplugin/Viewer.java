@@ -49,7 +49,6 @@ public class Viewer implements DataViewer {
       studio_ = studio;
       DisplayWindow theDisplay = studio_.displays().getCurrentWindow();
       displayBus_ = new EventBus();
-      displayBus_.register(this);
       if (theDisplay == null) {
          ij.IJ.error("No data set open");
          return;
@@ -70,7 +69,7 @@ public class Viewer implements DataViewer {
       }
       name_ = theDisplay.getName() + "-ClearVolume";
       lClearVolumeRenderer_
-              = ClearVolumeRendererFactory.newOpenCLRenderer(
+              = ClearVolumeRendererFactory.newBestRenderer(
                       name_,
                       randomImage.getWidth(),
                       randomImage.getHeight(),
@@ -119,6 +118,10 @@ public class Viewer implements DataViewer {
 
       lClearVolumeRenderer_.requestDisplay();
 
+   }
+   
+   public void register() {
+      displayBus_.register(this);
    }
    
    @Override

@@ -15,21 +15,8 @@
 
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
-import clearvolume.renderer.ClearVolumeRendererInterface;
-import clearvolume.renderer.factory.ClearVolumeRendererFactory;
-import clearvolume.transferf.TransferFunctions;
-import coremem.fragmented.FragmentedMemory;
-import coremem.offheap.OffHeapMemory;
-import coremem.types.NativeTypeEnum;
 import org.micromanager.MenuPlugin;
 import org.micromanager.Studio;
-import org.micromanager.data.Coords;
-import org.micromanager.data.Datastore;
-import org.micromanager.data.Image;
-import org.micromanager.data.Metadata;
-import org.micromanager.data.SummaryMetadata;
-import org.micromanager.display.DisplayManager;
-import org.micromanager.display.DisplayWindow;
 
 import org.scijava.plugin.Plugin;
 import org.scijava.plugin.SciJavaPlugin;
@@ -56,6 +43,7 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
    @Override
    public void onPluginSelected() {
       Viewer viewer = new Viewer(studio_);
+      viewer.register();
       studio_.getDisplayManager().addViewer(viewer);
    
       /*
