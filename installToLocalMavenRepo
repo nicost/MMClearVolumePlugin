@@ -1,1 +1,1 @@
-mvn install:install-file -Dfile=/Users/nico/git/micromanager2/micro-manager/mmstudio/MMJ_.jar -DgroupId=org.micromanager -DartifactId=MMJ_ -Dversion=2.0.0.1 -Dpackaging=jar -DlocalRepositoryPath=/Users/nico/git/MMClearVolumePlugin/repo/
+mvn install:install-file -Dfile=/Users/nico/git/micromanager2/micro-manager/mmstudio/MMJ_.jar -DgroupId=org.micromanager -DartifactId=MMJ_ -Dversion=2.0.0.2 -Dpackaging=jar -DlocalRepositoryPath=/Users/nico/git/MMClearVolumePlugin/repo/

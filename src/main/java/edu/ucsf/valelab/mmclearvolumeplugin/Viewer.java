@@ -19,9 +19,16 @@ import clearvolume.renderer.ClearVolumeRendererInterface;
 import clearvolume.renderer.factory.ClearVolumeRendererFactory;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
+import com.jogamp.nativewindow.NativeWindow;
+import com.jogamp.newt.awt.NewtCanvasAWT;
+import com.jogamp.newt.event.WindowAdapter;
+import com.jogamp.newt.event.WindowEvent;
+import com.jogamp.newt.opengl.GLWindow;
 import coremem.fragmented.FragmentedMemory;
 import coremem.offheap.OffHeapMemory;
 import coremem.types.NativeTypeEnum;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.util.List;
 import org.micromanager.Studio;
 import org.micromanager.data.Coords;
@@ -70,7 +77,7 @@ public class Viewer implements DataViewer {
       }
       name_ = theDisplay.getName() + "-ClearVolume";
       lClearVolumeRenderer_
-              = ClearVolumeRendererFactory.newBestRenderer(
+              = ClearVolumeRendererFactory.newOpenCLRenderer(
                       name_,
                       randomImage.getWidth(),
                       randomImage.getHeight(),
@@ -79,6 +86,7 @@ public class Viewer implements DataViewer {
                       768,
                       nrCh,
                       false);
+      
       lClearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
       lClearVolumeRenderer_.setVisible(true);
 
@@ -122,13 +130,44 @@ public class Viewer implements DataViewer {
 
    }
    
+   /**
+    * Code that needs to register this instance with various managers and listeners
+    * Could have been in the constructor, except that it is unsafe to register
+    * our instance before it is completed.  Needs to be called right after the 
+    * constructor.
+    */
    public void register() {
       displayBus_.register(this);
+      studio_.getDisplayManager().addViewer(this);
+      studio_.getDisplayManager().raisedToTop(this);
+      NewtCanvasAWT canvas = lClearVolumeRenderer_.getNewtCanvasAWT();
+      
+      NativeWindow window = canvas.getNativeWindow();
+      GLWindow glWindow = (GLWindow) window;
+      final DataViewer ourViewer = this;
+      glWindow.addWindowListener(new WindowAdapter(){
+         @Override
+         public void windowGainedFocus(WindowEvent e) {
+            System.out.println("Our window got focus");
+         }
+      });
+      canvas.addFocusListener(new FocusListener() {
+         @Override
+         public void focusGained(FocusEvent e) {
+            studio_.getDisplayManager().raisedToTop(ourViewer);
+         }
+
+         @Override
+         public void focusLost(FocusEvent e) {
+         }
+      }
+      );
    }
    
    @Override
    public void setDisplaySettings(DisplaySettings ds) {
-      ds_ = ds;}
+      ds_ = ds;
+   }
 
    @Override
    public DisplaySettings getDisplaySettings() {
