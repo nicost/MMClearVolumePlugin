@@ -42,7 +42,10 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
 
    @Override
    public void onPluginSelected() {
-      Viewer viewer = new Viewer(studio_);
+      Viewer viewer = null;
+      try {
+         viewer = new Viewer(studio_);
+      } catch (Exception ex) {}
       viewer.register();
       studio_.getDisplayManager().addViewer(viewer);
    

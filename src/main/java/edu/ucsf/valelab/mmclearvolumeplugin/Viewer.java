@@ -29,6 +29,7 @@ import org.micromanager.data.Datastore;
 import org.micromanager.data.Image;
 import org.micromanager.data.Metadata;
 import org.micromanager.data.SummaryMetadata;
+import org.micromanager.data.internal.DefaultImage;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
@@ -93,16 +94,17 @@ public class Viewer implements DataViewer {
          FragmentedMemory lFragmentedMemory = new FragmentedMemory();
          for (int i = 0; i < nrZ; i++) {
             // For each image in the stack build an offheap memory object:
-            OffHeapMemory lOffHeapMemory = OffHeapMemory.allocateBytes(nrBytesPerImage);
+            // OffHeapMemory lOffHeapMemory = OffHeapMemory.allocateBytes(nrBytesPerImage);
             // copy the array contents to it, we really can’t avoid that copy unfortunately
             builder = builder.z(i).channel(ch).time(0).stagePosition(0);
             Coords coords = builder.build();
-            Image image = store_.getImage(coords);
-            short[] pix = (short[]) image.getRawPixels();
-            lOffHeapMemory.copyFrom(pix);
+            // Bypass Micro-Manager api to get access to the ByteBuffers
+            DefaultImage image = (DefaultImage) store_.getImage(coords);
+            // short[] pix = (short[]) image.getRawPixels();
+            // lOffHeapMemory.copyFrom(pix);
 
             // add the contiguous memory as fragment:
-            lFragmentedMemory.add(lOffHeapMemory);
+            lFragmentedMemory.add(image.getPixelBuffer());
          }
 
          // pass data to renderer:
