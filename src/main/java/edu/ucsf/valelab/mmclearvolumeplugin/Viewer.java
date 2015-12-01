@@ -19,17 +19,14 @@ import clearvolume.renderer.ClearVolumeRendererInterface;
 import clearvolume.renderer.factory.ClearVolumeRendererFactory;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
-import com.jogamp.nativewindow.NativeWindow;
-import com.jogamp.newt.awt.NewtCanvasAWT;
-import com.jogamp.newt.event.WindowAdapter;
-import com.jogamp.newt.event.WindowEvent;
-import com.jogamp.newt.opengl.GLWindow;
 import coremem.fragmented.FragmentedMemory;
-import coremem.offheap.OffHeapMemory;
 import coremem.types.NativeTypeEnum;
 import java.awt.event.FocusEvent;
 import java.awt.event.FocusListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.List;
+import javax.swing.JFrame;
 import org.micromanager.Studio;
 import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
@@ -52,11 +49,13 @@ public class Viewer implements DataViewer {
    private ClearVolumeRendererInterface lClearVolumeRenderer_;
    private String name_;
    private final EventBus displayBus_;
+   private final JFrame cvFrame_;
    
    public Viewer(Studio studio) {
       studio_ = studio;
       DisplayWindow theDisplay = studio_.displays().getCurrentWindow();
       displayBus_ = new EventBus();
+      cvFrame_ = new JFrame();
       if (theDisplay == null) {
          ij.IJ.error("No data set open");
          return;
@@ -66,9 +65,6 @@ public class Viewer implements DataViewer {
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       Image randomImage = store_.getAnyImage();
-
-      // nrCh > 1 does not work yet. Remove once it works and make nrCh final
-      // nrCh = 1;
       
       // creates renderer:
       NativeTypeEnum nte = NativeTypeEnum.UnsignedShort;
@@ -85,7 +81,7 @@ public class Viewer implements DataViewer {
                       768,
                       768,
                       nrCh,
-                      false);
+                      true);
       
       lClearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
       lClearVolumeRenderer_.setVisible(true);
@@ -126,7 +122,11 @@ public class Viewer implements DataViewer {
                  metadata.getPixelSizeUm(), summary.getZStepUm());
       }
 
+      cvFrame_.add(lClearVolumeRenderer_.getNewtCanvasAWT());
+      cvFrame_.setSize(randomImage.getWidth(), randomImage.getHeight());
+      cvFrame_.setVisible(true);
       lClearVolumeRenderer_.requestDisplay();
+      
 
    }
    
@@ -140,18 +140,15 @@ public class Viewer implements DataViewer {
       displayBus_.register(this);
       studio_.getDisplayManager().addViewer(this);
       studio_.getDisplayManager().raisedToTop(this);
-      NewtCanvasAWT canvas = lClearVolumeRenderer_.getNewtCanvasAWT();
-      
-      NativeWindow window = canvas.getNativeWindow();
-      GLWindow glWindow = (GLWindow) window;
       final DataViewer ourViewer = this;
-      glWindow.addWindowListener(new WindowAdapter(){
+      cvFrame_.addWindowListener(new WindowAdapter(){
          @Override
          public void windowGainedFocus(WindowEvent e) {
             System.out.println("Our window got focus");
+            studio_.getDisplayManager().raisedToTop(ourViewer);
          }
       });
-      canvas.addFocusListener(new FocusListener() {
+      cvFrame_.addFocusListener(new FocusListener() {
          @Override
          public void focusGained(FocusEvent e) {
             studio_.getDisplayManager().raisedToTop(ourViewer);
