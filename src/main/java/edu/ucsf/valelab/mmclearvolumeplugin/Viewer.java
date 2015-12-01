@@ -19,14 +19,20 @@ import clearvolume.renderer.ClearVolumeRendererInterface;
 import clearvolume.renderer.factory.ClearVolumeRendererFactory;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
+import com.jogamp.newt.awt.NewtCanvasAWT;
 import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Container;
+import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.awt.event.WindowFocusListener;
+import java.util.ArrayList;
 import java.util.List;
 import javax.swing.JFrame;
+import javax.swing.SwingUtilities;
 import org.micromanager.Studio;
 import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
@@ -46,22 +52,25 @@ public class Viewer implements DataViewer {
    private DisplaySettings ds_;
    private final Studio studio_;
    private Datastore store_;
-   private ClearVolumeRendererInterface lClearVolumeRenderer_;
+   private ClearVolumeRendererInterface clearVolumeRenderer_;
    private String name_;
    private final EventBus displayBus_;
    private final JFrame cvFrame_;
+   private Coords.CoordsBuilder coordsBuilder_;
+   private boolean open_ = false;
    
    public Viewer(Studio studio) {
       studio_ = studio;
       DisplayWindow theDisplay = studio_.displays().getCurrentWindow();
       displayBus_ = new EventBus();
       cvFrame_ = new JFrame();
+      coordsBuilder_ = studio_.data().getCoordsBuilder();
       if (theDisplay == null) {
          ij.IJ.error("No data set open");
          return;
       }
+      ds_ = theDisplay.getDisplaySettings().copy().build();
       store_ = theDisplay.getDatastore();
-      // List<String> axes = theDatastore.getAxes();
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       Image randomImage = store_.getAnyImage();
@@ -72,7 +81,8 @@ public class Viewer implements DataViewer {
          nte = NativeTypeEnum.UnsignedByte;
       }
       name_ = theDisplay.getName() + "-ClearVolume";
-      lClearVolumeRenderer_
+
+      clearVolumeRenderer_
               = ClearVolumeRendererFactory.newOpenCLRenderer(
                       name_,
                       randomImage.getWidth(),
@@ -83,16 +93,26 @@ public class Viewer implements DataViewer {
                       nrCh,
                       true);
       
-      lClearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
-      lClearVolumeRenderer_.setVisible(true);
-
-      final int nrBytesPerImage = randomImage.getWidth() * randomImage.getHeight() *
-              randomImage.getBytesPerPixel();
+      final NewtCanvasAWT lNCWAWT = clearVolumeRenderer_.getNewtCanvasAWT();
+      cvFrame_.setTitle(name_);
+      cvFrame_.setLayout(new BorderLayout());
+      final Container container = new Container();
+      container.setLayout(new BorderLayout());
+      container.add(lNCWAWT, BorderLayout.CENTER);
+      cvFrame_.setSize(new Dimension(randomImage.getWidth(), 
+              randomImage.getHeight()) );
+      cvFrame_.add(container);
+      SwingUtilities.invokeLater(() -> {
+         cvFrame_.setVisible(true);
+      });
+            
+      clearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
+      clearVolumeRenderer_.setVisible(true);
 
       // create fragmented memory for each stack that needs sending to CV:
-      Coords.CoordsBuilder builder = studio_.data().getCoordsBuilder();
       final Metadata metadata = randomImage.getMetadata();
       final SummaryMetadata summary = store_.getSummaryMetadata();
+      final int maxValue = 1 << store_.getAnyImage().getMetadata().getBitDepth();
       
       for (int ch = 0; ch < nrCh; ch++) {
          FragmentedMemory lFragmentedMemory = new FragmentedMemory();
@@ -100,8 +120,8 @@ public class Viewer implements DataViewer {
             // For each image in the stack build an offheap memory object:
             // OffHeapMemory lOffHeapMemory = OffHeapMemory.allocateBytes(nrBytesPerImage);
             // copy the array contents to it, we really can’t avoid that copy unfortunately
-            builder = builder.z(i).channel(ch).time(0).stagePosition(0);
-            Coords coords = builder.build();
+            coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(0).stagePosition(0);
+            Coords coords = coordsBuilder_.build();
             // Bypass Micro-Manager api to get access to the ByteBuffers
             DefaultImage image = (DefaultImage) store_.getImage(coords);
             // short[] pix = (short[]) image.getRawPixels();
@@ -112,21 +132,25 @@ public class Viewer implements DataViewer {
          }
 
          // pass data to renderer:
-         lClearVolumeRenderer_.setVolumeDataBuffer(ch,
+         clearVolumeRenderer_.setVolumeDataBuffer(ch,
                  lFragmentedMemory,
                  randomImage.getWidth(),
                  randomImage.getHeight(),
                  nrZ);
          // TODO: correct x and y voxel sizes using aspect ratio
-         lClearVolumeRenderer_.setVoxelSize(ch, metadata.getPixelSizeUm(),
+         clearVolumeRenderer_.setVoxelSize(ch, metadata.getPixelSizeUm(),
                  metadata.getPixelSizeUm(), summary.getZStepUm());
+         Color chColor = ds_.getChannelColors()[ch];
+         // clearVolumeRenderer_.setTransferFunction(ch, 
+         //        TransferFunctions.getGradientForColor(chColor.getRGB()));
+         //clearVolumeRenderer_.setBrightness(ch, 
+         //        ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0] / maxValue );
+         clearVolumeRenderer_.setGamma(ch,  
+                 ds_.getChannelContrastSettings()[ch].getContrastGammas()[0]);
       }
 
-      cvFrame_.add(lClearVolumeRenderer_.getNewtCanvasAWT());
-      cvFrame_.setSize(randomImage.getWidth(), randomImage.getHeight());
-      cvFrame_.setVisible(true);
-      lClearVolumeRenderer_.requestDisplay();
-      
+      clearVolumeRenderer_.requestDisplay();
+      open_ = true;
 
    }
    
@@ -137,37 +161,52 @@ public class Viewer implements DataViewer {
     * constructor.
     */
    public void register() {
+      if (!open_)
+         return;
       displayBus_.register(this);
       studio_.getDisplayManager().addViewer(this);
       studio_.getDisplayManager().raisedToTop(this);
       final DataViewer ourViewer = this;
-      cvFrame_.addWindowListener(new WindowAdapter(){
+
+      // the WindowFocusListener should go into the WindowAdapter, but there it
+      // does not work, so add both a WindowListener and WindowFocusListener
+      cvFrame_.addWindowFocusListener(new WindowFocusListener() {
          @Override
          public void windowGainedFocus(WindowEvent e) {
             System.out.println("Our window got focus");
             studio_.getDisplayManager().raisedToTop(ourViewer);
          }
-      });
-      cvFrame_.addFocusListener(new FocusListener() {
-         @Override
-         public void focusGained(FocusEvent e) {
-            studio_.getDisplayManager().raisedToTop(ourViewer);
-         }
 
          @Override
-         public void focusLost(FocusEvent e) {
-         }
+         public void windowLostFocus(WindowEvent e) {
+            System.out.println("Our window lost focus"); }
       }
       );
+      
+      cvFrame_.addWindowListener(new WindowAdapter(){
+         @Override
+         public void windowClosing(WindowEvent e) {
+            clearVolumeRenderer_.close();
+            cvFrame_.dispose();
+            studio_.getDisplayManager().removeViewer(ourViewer);
+            open_ = false;
+         }
+         @Override
+         public void windowClosed(WindowEvent e) {
+         }
+      });
+      
    }
    
    @Override
    public void setDisplaySettings(DisplaySettings ds) {
+      System.out.println("setDisplaySettings called");
       ds_ = ds;
    }
 
    @Override
    public DisplaySettings getDisplaySettings() {
+      System.out.println("getDisplaySettings called");
       return ds_;
    }
 
@@ -188,29 +227,55 @@ public class Viewer implements DataViewer {
 
    @Override
    public Datastore getDatastore() {
+      System.out.println("getDatastore called");
       return store_;
    }
 
    @Override
    public void setDisplayedImageTo(Coords coords) {
+      System.out.println("setDisplayedImageTo called and ignored");
    }
 
    @Override
+   /**
+    * Assemble all images that are showing in our volume
+    * May need to be updated for multiple time points in the future
+    */
    public List<Image> getDisplayedImages() {
-      return null;
+      System.out.println("getDisplayed Images called");
+      List<Image> imageList = new ArrayList<>();
+      final int nrZ = store_.getAxisLength(Coords.Z);
+      final int nrCh = store_.getAxisLength(Coords.CHANNEL);
+      for (int ch = 0; ch < nrCh; ch++) {
+         /*
+         for (int i = 0; i < nrZ; i++) {
+            coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(0).stagePosition(0);
+            Coords coords = coordsBuilder_.build();
+            imageList.add(store_.getImage(coords));
+         }
+         */
+         // Only return the middle image
+         coordsBuilder_ = coordsBuilder_.z(nrZ/2).channel(ch).time(0).stagePosition(0);
+         Coords coords = coordsBuilder_.build();
+         imageList.add(store_.getImage(coords));
+      }
+      return imageList;
    }
 
    @Override
    public void requestRedraw() {
-        }
+      System.out.println("Redraw request received");
+   }
 
    @Override
    public boolean getIsClosed() {
-      return lClearVolumeRenderer_.isShowing();
+      System.out.println("getIsClosed called, answered: " + !clearVolumeRenderer_.isShowing());
+      return !clearVolumeRenderer_.isShowing();
    }
 
    @Override
    public String getName() {
+      System.out.println("Name requested, gave: " + name_);
       return name_;
    }
    
