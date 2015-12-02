@@ -55,7 +55,8 @@ import org.micromanager.display.internal.events.DefaultDisplayAboutToShowEvent;
 import org.micromanager.events.internal.DefaultEventManager;
 
 /**
- *
+ * Micro-Manager DataViewer that shows 3D stack in the ClearVolume 3D Renderer
+ * 
  * @author nico
  */
 public class Viewer implements DisplayWindow {
@@ -129,34 +130,35 @@ public class Viewer implements DisplayWindow {
       for (int ch = 0; ch < nrCh; ch++) {
          FragmentedMemory lFragmentedMemory = new FragmentedMemory();
          for (int i = 0; i < nrZ; i++) {
-            // For each image in the stack build an offheap memory object:
-            // OffHeapMemory lOffHeapMemory = OffHeapMemory.allocateBytes(nrBytesPerImage);
-            // copy the array contents to it, we really can’t avoid that copy unfortunately
             coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(0).stagePosition(0);
             Coords coords = coordsBuilder_.build();
+
             // Bypass Micro-Manager api to get access to the ByteBuffers
             DefaultImage image = (DefaultImage) store_.getImage(coords);
-            // short[] pix = (short[]) image.getRawPixels();
-            // lOffHeapMemory.copyFrom(pix);
 
             // add the contiguous memory as fragment:
             lFragmentedMemory.add(image.getPixelBuffer());
          }
 
-         // pass data to renderer:
+         // pass data to renderer: (this calls takes a long time!)
          clearVolumeRenderer_.setVolumeDataBuffer(ch,
                  lFragmentedMemory,
                  randomImage.getWidth(),
                  randomImage.getHeight(),
                  nrZ);
+         
          // TODO: correct x and y voxel sizes using aspect ratio
          clearVolumeRenderer_.setVoxelSize(ch, metadata.getPixelSizeUm(),
                  metadata.getPixelSizeUm(), summary.getZStepUm());
+
+         // Set various display options:
          Color chColor = ds_.getChannelColors()[ch];
          clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
-         clearVolumeRenderer_.setBrightness(ch, 
-                 (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
-                         (float) maxValue_ );
+         float max = (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
+                         (float) maxValue_;
+         float min = (float) ds_.getChannelContrastSettings()[ch].getContrastMins()[0] / 
+                         (float) maxValue_;
+         clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
          Double[] contrastGammas = ds_.getChannelContrastSettings()[ch].getContrastGammas();
          if (contrastGammas != null) {
             clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
@@ -184,7 +186,12 @@ public class Viewer implements DisplayWindow {
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       displayBus_.register(this);
       studio_.getDisplayManager().addViewer(this);
+      
+      // Needed to initialize the histograms
       DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
+      
+      // Calculate the histograms for the channels.  For now, only use the middle
+      // image of the stack
       for (int ch = 0; ch < nrCh; ch++) {
          coordsBuilder_ = coordsBuilder_.z(nrZ / 2).channel(ch).time(0).stagePosition(0);
          Coords coords = coordsBuilder_.build();
@@ -232,24 +239,37 @@ public class Viewer implements DisplayWindow {
 
    }
 
+   /**
+    * There was an update to the display settings, so update the display
+    * of the image to reflect the change.  Only change variables that actually
+    * changed
+    * @param ds New display settings 
+    */
    @Override
    public void setDisplaySettings(DisplaySettings ds) {
-      System.out.println("setDisplaySettings called");
-      //DefaultDisplaySettings.setStandardSettings(ds_);
-      // RememberedChannelSettings.saveSettingsToProfile(settings,
-      //      store_.getSummaryMetadata(), store_.getAxisLength(Coords.CHANNEL));
-      // This will cause the canvas to pick up magnification changes, note.
+      
       for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++ ) {
+         if ( !Objects.equals(ds_.getSafeIsVisible(ch, true), 
+                 ds.getSafeIsVisible(ch, true)) ) {
+            clearVolumeRenderer_.setLayerVisible(ch, ds.getSafeIsVisible(ch, true) );
+         }
          if (ds_.getChannelColors()[ch] != ds.getChannelColors()[ch]) {
             Color chColor = ds.getChannelColors()[ch];
             clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
          }
          if (!Objects.equals 
-            (ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0], 
-             ds.getChannelContrastSettings()[ch].getContrastMaxes()[0]) )  {
-            clearVolumeRenderer_.setBrightness(ch, 
-                 (float) ds.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
-                         (float) maxValue_ );
+               (ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0], 
+               ds.getChannelContrastSettings()[ch].getContrastMaxes()[0])  ||
+             !Objects.equals
+               (ds_.getChannelContrastSettings()[ch].getContrastMins()[0], 
+               ds.getChannelContrastSettings()[ch].getContrastMins()[0]) )  {
+            float max = (float) ds.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
+                         (float) maxValue_; 
+            float min = (float) ds.getChannelContrastSettings()[ch].getContrastMins()[0] / 
+                         (float) maxValue_;
+            
+            System.out.println("Max was: " + max);
+            clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
          }
          if (!Objects.equals 
                (ds_.getChannelContrastSettings()[ch].getContrastGammas(), 
@@ -258,7 +278,11 @@ public class Viewer implements DisplayWindow {
                     ds.getChannelContrastSettings()[ch].getContrastGammas()[0]);
          }
       }
+      
+      // replace our reference to the display settings with the new one
       ds_ = ds;
+      
+      // Needed to update the Inspector window
       displayBus_.post(new NewDisplaySettingsEvent(ds_, this));
    }
 
@@ -308,17 +332,17 @@ public class Viewer implements DisplayWindow {
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       for (int ch = 0; ch < nrCh; ch++) {
-         /*
          for (int i = 0; i < nrZ; i++) {
             coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(0).stagePosition(0);
             Coords coords = coordsBuilder_.build();
             imageList.add(store_.getImage(coords));
          }
-          */
+         /*
          // Only return the middle image
          coordsBuilder_ = coordsBuilder_.z(nrZ / 2).channel(ch).time(0).stagePosition(0);
          Coords coords = coordsBuilder_.build();
          imageList.add(store_.getImage(coords));
+         */
       }
       return imageList;
    }

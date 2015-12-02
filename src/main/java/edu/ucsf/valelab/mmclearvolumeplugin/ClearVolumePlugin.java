@@ -21,6 +21,11 @@ import org.micromanager.Studio;
 import org.scijava.plugin.Plugin;
 import org.scijava.plugin.SciJavaPlugin;
 
+/**
+ * More or less boiler plate code to become a Micro-Manager 2.0 plugin
+ * Most of the action happens in the CVViewer class
+ * @author nico
+ */
 @Plugin(type = MenuPlugin.class)
 public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
 
@@ -48,18 +53,7 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
       } catch (Exception ex) {
          ex.printStackTrace();
       }
-   
-      /*
-      while (lClearVolumeRenderer.isShowing()) {
-         try {
-            Thread.sleep(100);
-         } catch (InterruptedException ex) {
-            Logger.getLogger(ClearVolumePlugin.class.getName()).log(Level.SEVERE, null, ex);
-         }
-      }
-*/
 
-     // lClearVolumeRenderer.close();
 
    }
 
