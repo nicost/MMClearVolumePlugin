@@ -48,9 +48,7 @@ import org.micromanager.data.internal.DefaultImage;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
-import org.micromanager.display.HistogramData;
 import org.micromanager.display.NewDisplaySettingsEvent;
-import org.micromanager.display.NewHistogramsEvent;
 import org.micromanager.display.internal.events.DefaultDisplayAboutToShowEvent;
 import org.micromanager.events.internal.DefaultEventManager;
 
@@ -182,29 +180,15 @@ public class Viewer implements DisplayWindow {
          return;
       }
 
-      final int nrZ = store_.getAxisLength(Coords.Z);
-      final int nrCh = store_.getAxisLength(Coords.CHANNEL);
-      displayBus_.register(this);
+      displayBus_.register(this);    
       studio_.getDisplayManager().addViewer(this);
-      
       // Needed to initialize the histograms
       DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
-      
-      // Calculate the histograms for the channels.  For now, only use the middle
-      // image of the stack
-      for (int ch = 0; ch < nrCh; ch++) {
-         coordsBuilder_ = coordsBuilder_.z(nrZ / 2).channel(ch).time(0).stagePosition(0);
-         Coords coords = coordsBuilder_.build();
-         Image middleImage = store_.getImage(coords);
-         ArrayList<HistogramData> datas = new ArrayList<>();
-         for (int i = 0; i < middleImage.getNumComponents(); ++i) {
-            HistogramData data = studio_.displays().calculateHistogramWithSettings(
-                    middleImage, i, ds_);
-            datas.add(data);
-         }
-         displayBus_.post(new NewHistogramsEvent(ch, datas));
-      }
+      // Ensure there are histograms for our display.
+       studio_.getDisplayManager().updateHistogramDisplays(getDisplayedImages(), this);
+
       studio_.getDisplayManager().raisedToTop(this);
+      // used to reference our instance within the listeners:
       final DataViewer ourViewer = this;
 
       // the WindowFocusListener should go into the WindowAdapter, but there it
@@ -332,20 +316,33 @@ public class Viewer implements DisplayWindow {
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       for (int ch = 0; ch < nrCh; ch++) {
+         /*
+         // return the complete stack
          for (int i = 0; i < nrZ; i++) {
             coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(0).stagePosition(0);
             Coords coords = coordsBuilder_.build();
             imageList.add(store_.getImage(coords));
          }
-         /*
+         */
+         
          // Only return the middle image
          coordsBuilder_ = coordsBuilder_.z(nrZ / 2).channel(ch).time(0).stagePosition(0);
          Coords coords = coordsBuilder_.build();
          imageList.add(store_.getImage(coords));
-         */
+         
       }
       return imageList;
    }
+   
+      /**
+    * This method ensures that the Inspector histograms have up-to-date data
+    * to display.
+    */
+   private void updateHistograms() {
+      studio_.displays().updateHistogramDisplays(getDisplayedImages(), this);
+   }
+
+   
 
    @Override
    public void requestRedraw() {
@@ -385,7 +382,7 @@ public class Viewer implements DisplayWindow {
 
    
    // Following functions are included since we need to be a DisplayWindow, not a DataViewer
-   
+
    @Override
    public void displayStatusString(String string) {
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -460,4 +457,5 @@ public class Viewer implements DisplayWindow {
    public void setCustomTitle(String string) {
       
    }
+
 }

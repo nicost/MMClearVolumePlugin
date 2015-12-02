@@ -17,6 +17,8 @@ package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import org.micromanager.MenuPlugin;
 import org.micromanager.Studio;
+import org.micromanager.display.InspectorPanel;
+import org.micromanager.display.InspectorPlugin;
 
 import org.scijava.plugin.Plugin;
 import org.scijava.plugin.SciJavaPlugin;
@@ -27,7 +29,7 @@ import org.scijava.plugin.SciJavaPlugin;
  * @author nico
  */
 @Plugin(type = MenuPlugin.class)
-public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
+public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin, InspectorPlugin {
 
    private Studio studio_;
    static public final String VERSION_INFO = "1.5.0";
@@ -75,6 +77,11 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin {
    @Override
    public String getVersion() {
       return VERSION_INFO;
+   }
+
+   @Override
+   public InspectorPanel createPanel() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
    }
 
 }
