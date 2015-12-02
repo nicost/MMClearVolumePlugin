@@ -35,6 +35,7 @@ import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.micromanager.Studio;
@@ -50,8 +51,6 @@ import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.HistogramData;
 import org.micromanager.display.NewDisplaySettingsEvent;
 import org.micromanager.display.NewHistogramsEvent;
-import org.micromanager.display.internal.DefaultDisplaySettings;
-import org.micromanager.display.internal.RememberedChannelSettings;
 import org.micromanager.display.internal.events.DefaultDisplayAboutToShowEvent;
 import org.micromanager.events.internal.DefaultEventManager;
 
@@ -70,6 +69,7 @@ public class Viewer implements DisplayWindow {
    private final JFrame cvFrame_;
    private Coords.CoordsBuilder coordsBuilder_;
    private boolean open_ = false;
+   private int maxValue_;
 
    public Viewer(Studio studio) {
       studio_ = studio;
@@ -124,7 +124,7 @@ public class Viewer implements DisplayWindow {
       // create fragmented memory for each stack that needs sending to CV:
       final Metadata metadata = randomImage.getMetadata();
       final SummaryMetadata summary = store_.getSummaryMetadata();
-      final int maxValue = 1 << store_.getAnyImage().getMetadata().getBitDepth();
+      maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
 
       for (int ch = 0; ch < nrCh; ch++) {
          FragmentedMemory lFragmentedMemory = new FragmentedMemory();
@@ -154,13 +154,17 @@ public class Viewer implements DisplayWindow {
                  metadata.getPixelSizeUm(), summary.getZStepUm());
          Color chColor = ds_.getChannelColors()[ch];
          clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
-         // clearVolumeRenderer_.setBrightness(ch, 
-         //        ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0] / maxValue );
-         // clearVolumeRenderer_.setGamma(ch,  
-         //        ds_.getChannelContrastSettings()[ch].getContrastGammas()[0]);
+         clearVolumeRenderer_.setBrightness(ch, 
+                 (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
+                         (float) maxValue_ );
+         Double[] contrastGammas = ds_.getChannelContrastSettings()[ch].getContrastGammas();
+         if (contrastGammas != null) {
+            clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
+         }
       }
 
       clearVolumeRenderer_.requestDisplay();
+      cvFrame_.pack();
       open_ = true;
 
    }
@@ -231,11 +235,30 @@ public class Viewer implements DisplayWindow {
    @Override
    public void setDisplaySettings(DisplaySettings ds) {
       System.out.println("setDisplaySettings called");
-      ds_ = ds;
-      DefaultDisplaySettings.setStandardSettings(ds_);
+      //DefaultDisplaySettings.setStandardSettings(ds_);
       // RememberedChannelSettings.saveSettingsToProfile(settings,
       //      store_.getSummaryMetadata(), store_.getAxisLength(Coords.CHANNEL));
       // This will cause the canvas to pick up magnification changes, note.
+      for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++ ) {
+         if (ds_.getChannelColors()[ch] != ds.getChannelColors()[ch]) {
+            Color chColor = ds.getChannelColors()[ch];
+            clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
+         }
+         if (!Objects.equals 
+            (ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0], 
+             ds.getChannelContrastSettings()[ch].getContrastMaxes()[0]) )  {
+            clearVolumeRenderer_.setBrightness(ch, 
+                 (float) ds.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
+                         (float) maxValue_ );
+         }
+         if (!Objects.equals 
+               (ds_.getChannelContrastSettings()[ch].getContrastGammas(), 
+                ds.getChannelContrastSettings()[ch].getContrastGammas()) )  {
+            clearVolumeRenderer_.setGamma(ch,
+                    ds.getChannelContrastSettings()[ch].getContrastGammas()[0]);
+         }
+      }
+      ds_ = ds;
       displayBus_.post(new NewDisplaySettingsEvent(ds_, this));
    }
 
@@ -259,7 +282,7 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public void postEvent(Object o) {
-      System.out.println("Posting even on the EventBus");
+      System.out.println("Posting event on the EventBus");
       displayBus_.post(o);
    }
 
