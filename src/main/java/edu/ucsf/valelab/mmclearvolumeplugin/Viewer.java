@@ -12,20 +12,24 @@
  * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY
  * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
  */
-
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import clearvolume.renderer.ClearVolumeRendererInterface;
 import clearvolume.renderer.factory.ClearVolumeRendererFactory;
+import clearvolume.transferf.TransferFunction1D;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
 import com.jogamp.newt.awt.NewtCanvasAWT;
 import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
+import ij.ImagePlus;
+import ij.gui.ImageWindow;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.GraphicsConfiguration;
+import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
@@ -43,12 +47,20 @@ import org.micromanager.data.internal.DefaultImage;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
+import org.micromanager.display.HistogramData;
+import org.micromanager.display.NewDisplaySettingsEvent;
+import org.micromanager.display.NewHistogramsEvent;
+import org.micromanager.display.internal.DefaultDisplaySettings;
+import org.micromanager.display.internal.RememberedChannelSettings;
+import org.micromanager.display.internal.events.DefaultDisplayAboutToShowEvent;
+import org.micromanager.events.internal.DefaultEventManager;
 
 /**
  *
  * @author nico
  */
-public class Viewer implements DataViewer {
+public class Viewer implements DisplayWindow {
+
    private DisplaySettings ds_;
    private final Studio studio_;
    private Datastore store_;
@@ -58,7 +70,7 @@ public class Viewer implements DataViewer {
    private final JFrame cvFrame_;
    private Coords.CoordsBuilder coordsBuilder_;
    private boolean open_ = false;
-   
+
    public Viewer(Studio studio) {
       studio_ = studio;
       DisplayWindow theDisplay = studio_.displays().getCurrentWindow();
@@ -74,7 +86,7 @@ public class Viewer implements DataViewer {
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       Image randomImage = store_.getAnyImage();
-      
+
       // creates renderer:
       NativeTypeEnum nte = NativeTypeEnum.UnsignedShort;
       if (randomImage.getBytesPerPixel() == 1) {
@@ -92,20 +104,20 @@ public class Viewer implements DataViewer {
                       768,
                       nrCh,
                       true);
-      
+
       final NewtCanvasAWT lNCWAWT = clearVolumeRenderer_.getNewtCanvasAWT();
       cvFrame_.setTitle(name_);
       cvFrame_.setLayout(new BorderLayout());
       final Container container = new Container();
       container.setLayout(new BorderLayout());
       container.add(lNCWAWT, BorderLayout.CENTER);
-      cvFrame_.setSize(new Dimension(randomImage.getWidth(), 
-              randomImage.getHeight()) );
+      cvFrame_.setSize(new Dimension(randomImage.getWidth(),
+              randomImage.getHeight()));
       cvFrame_.add(container);
       SwingUtilities.invokeLater(() -> {
          cvFrame_.setVisible(true);
       });
-            
+
       clearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
       clearVolumeRenderer_.setVisible(true);
 
@@ -113,7 +125,7 @@ public class Viewer implements DataViewer {
       final Metadata metadata = randomImage.getMetadata();
       final SummaryMetadata summary = store_.getSummaryMetadata();
       final int maxValue = 1 << store_.getAnyImage().getMetadata().getBitDepth();
-      
+
       for (int ch = 0; ch < nrCh; ch++) {
          FragmentedMemory lFragmentedMemory = new FragmentedMemory();
          for (int i = 0; i < nrZ; i++) {
@@ -141,30 +153,46 @@ public class Viewer implements DataViewer {
          clearVolumeRenderer_.setVoxelSize(ch, metadata.getPixelSizeUm(),
                  metadata.getPixelSizeUm(), summary.getZStepUm());
          Color chColor = ds_.getChannelColors()[ch];
-         // clearVolumeRenderer_.setTransferFunction(ch, 
-         //        TransferFunctions.getGradientForColor(chColor.getRGB()));
-         //clearVolumeRenderer_.setBrightness(ch, 
+         clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
+         // clearVolumeRenderer_.setBrightness(ch, 
          //        ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0] / maxValue );
-         clearVolumeRenderer_.setGamma(ch,  
-                 ds_.getChannelContrastSettings()[ch].getContrastGammas()[0]);
+         // clearVolumeRenderer_.setGamma(ch,  
+         //        ds_.getChannelContrastSettings()[ch].getContrastGammas()[0]);
       }
 
       clearVolumeRenderer_.requestDisplay();
       open_ = true;
 
    }
-   
+
    /**
-    * Code that needs to register this instance with various managers and listeners
-    * Could have been in the constructor, except that it is unsafe to register
-    * our instance before it is completed.  Needs to be called right after the 
-    * constructor.
+    * Code that needs to register this instance with various managers and
+    * listeners Could have been in the constructor, except that it is unsafe to
+    * register our instance before it is completed. Needs to be called right
+    * after the constructor.
     */
    public void register() {
-      if (!open_)
+      if (!open_) {
          return;
+      }
+
+      final int nrZ = store_.getAxisLength(Coords.Z);
+      final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       displayBus_.register(this);
       studio_.getDisplayManager().addViewer(this);
+      DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
+      for (int ch = 0; ch < nrCh; ch++) {
+         coordsBuilder_ = coordsBuilder_.z(nrZ / 2).channel(ch).time(0).stagePosition(0);
+         Coords coords = coordsBuilder_.build();
+         Image middleImage = store_.getImage(coords);
+         ArrayList<HistogramData> datas = new ArrayList<>();
+         for (int i = 0; i < middleImage.getNumComponents(); ++i) {
+            HistogramData data = studio_.displays().calculateHistogramWithSettings(
+                    middleImage, i, ds_);
+            datas.add(data);
+         }
+         displayBus_.post(new NewHistogramsEvent(ch, datas));
+      }
       studio_.getDisplayManager().raisedToTop(this);
       final DataViewer ourViewer = this;
 
@@ -179,11 +207,12 @@ public class Viewer implements DataViewer {
 
          @Override
          public void windowLostFocus(WindowEvent e) {
-            System.out.println("Our window lost focus"); }
+            System.out.println("Our window lost focus");
+         }
       }
       );
-      
-      cvFrame_.addWindowListener(new WindowAdapter(){
+
+      cvFrame_.addWindowListener(new WindowAdapter() {
          @Override
          public void windowClosing(WindowEvent e) {
             clearVolumeRenderer_.close();
@@ -191,17 +220,23 @@ public class Viewer implements DataViewer {
             studio_.getDisplayManager().removeViewer(ourViewer);
             open_ = false;
          }
+
          @Override
          public void windowClosed(WindowEvent e) {
          }
       });
-      
+
    }
-   
+
    @Override
    public void setDisplaySettings(DisplaySettings ds) {
       System.out.println("setDisplaySettings called");
       ds_ = ds;
+      DefaultDisplaySettings.setStandardSettings(ds_);
+      // RememberedChannelSettings.saveSettingsToProfile(settings,
+      //      store_.getSummaryMetadata(), store_.getAxisLength(Coords.CHANNEL));
+      // This will cause the canvas to pick up magnification changes, note.
+      displayBus_.post(new NewDisplaySettingsEvent(ds_, this));
    }
 
    @Override
@@ -212,16 +247,19 @@ public class Viewer implements DataViewer {
 
    @Override
    public void registerForEvents(Object o) {
+      System.out.println("Registering for events");
       displayBus_.register(o);
    }
 
    @Override
    public void unregisterForEvents(Object o) {
+      System.out.println("Unregistering for events");
       displayBus_.unregister(o);
    }
 
    @Override
    public void postEvent(Object o) {
+      System.out.println("Posting even on the EventBus");
       displayBus_.post(o);
    }
 
@@ -238,8 +276,8 @@ public class Viewer implements DataViewer {
 
    @Override
    /**
-    * Assemble all images that are showing in our volume
-    * May need to be updated for multiple time points in the future
+    * Assemble all images that are showing in our volume May need to be updated
+    * for multiple time points in the future
     */
    public List<Image> getDisplayedImages() {
       System.out.println("getDisplayed Images called");
@@ -253,9 +291,9 @@ public class Viewer implements DataViewer {
             Coords coords = coordsBuilder_.build();
             imageList.add(store_.getImage(coords));
          }
-         */
+          */
          // Only return the middle image
-         coordsBuilder_ = coordsBuilder_.z(nrZ/2).channel(ch).time(0).stagePosition(0);
+         coordsBuilder_ = coordsBuilder_.z(nrZ / 2).channel(ch).time(0).stagePosition(0);
          Coords coords = coordsBuilder_.build();
          imageList.add(store_.getImage(coords));
       }
@@ -278,5 +316,101 @@ public class Viewer implements DataViewer {
       System.out.println("Name requested, gave: " + name_);
       return name_;
    }
+
+   /**
+    * This function is in CV 1.1.2, replace when updating Returns a transfer a
+    * simple transfer function that is a gradient from dark transparent to a
+    * given color. The transparency of the given color is used.
+    *
+    * @param pColor color
+    * @return 1D transfer function.
+    */
+   private TransferFunction1D getGradientForColor(Color pColor) {
+      final TransferFunction1D lTransfertFunction = new TransferFunction1D();
+      lTransfertFunction.addPoint(0, 0, 0, 0);
+      float lNormaFactor = (float) (1.0 / 255);
+      lTransfertFunction.addPoint(lNormaFactor * pColor.getRed(),
+              lNormaFactor * pColor.getGreen(),
+              lNormaFactor * pColor.getBlue(),
+              lNormaFactor * pColor.getAlpha());
+      return lTransfertFunction;
+   }
+
    
+   // Following functions are included since we need to be a DisplayWindow, not a DataViewer
+   
+   @Override
+   public void displayStatusString(String string) {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public void setMagnification(double d) {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public void adjustZoom(double d) {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public double getMagnification() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public void autostretch() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public ImagePlus getImagePlus() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public boolean requestToClose() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public void forceClosed() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public void toggleFullScreen() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public GraphicsConfiguration getScreenConfig() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public DisplayWindow duplicate() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public void toFront() {
+      cvFrame_.toFront();
+   }
+
+   @Override
+   public ImageWindow getImageWindow() {
+      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   }
+
+   @Override
+   public Window getAsWindow() {
+      return cvFrame_.getOwner();
+   }
+
+   @Override
+   public void setCustomTitle(String string) {
+      
+   }
 }
