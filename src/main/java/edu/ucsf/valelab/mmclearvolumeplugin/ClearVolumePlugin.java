@@ -15,6 +15,13 @@
 
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
+import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
+import java.awt.Dimension;
+import java.awt.event.ActionEvent;
+import javax.swing.JButton;
+import javax.swing.JLabel;
+import javax.swing.event.ChangeEvent;
+import net.miginfocom.swing.MigLayout;
 import org.micromanager.MenuPlugin;
 import org.micromanager.Studio;
 import org.micromanager.display.InspectorPanel;
@@ -36,6 +43,8 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin, InspectorPl
    static private final String COPYRIGHT_NOTICE = "Copyright by UCSF, 2015";
    static private final String DESCRIPTION = "View Micro-Manager data in the ClearVolume viewer";
    static private final String NAME = "ClearVolume";
+   
+
 
    @Override
    public void setContext(Studio studio) {
@@ -81,7 +90,12 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin, InspectorPl
 
    @Override
    public InspectorPanel createPanel() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+      CVInspectorPanel cvPanel =  new CVInspectorPanel();
+      cvPanel.buildPanelGUI();
+      
+      return cvPanel;
    }
+
+  
 
 }

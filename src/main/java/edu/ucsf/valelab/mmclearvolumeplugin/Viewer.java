@@ -164,6 +164,7 @@ public class Viewer implements DisplayWindow {
       }
 
       clearVolumeRenderer_.requestDisplay();
+      clearVolumeRenderer_.toggleControlPanelDisplay();
       cvFrame_.pack();
       open_ = true;
 
@@ -334,7 +335,7 @@ public class Viewer implements DisplayWindow {
       return imageList;
    }
    
-      /**
+  /**
     * This method ensures that the Inspector histograms have up-to-date data
     * to display.
     */
@@ -342,7 +343,6 @@ public class Viewer implements DisplayWindow {
       studio_.displays().updateHistogramDisplays(getDisplayedImages(), this);
    }
 
-   
 
    @Override
    public void requestRedraw() {
@@ -380,6 +380,56 @@ public class Viewer implements DisplayWindow {
       return lTransfertFunction;
    }
 
+   
+   /*
+    * Series of functions that are merely pass through to the underlying 
+    * clearVolumeRenderer
+   */
+   
+   /**
+    * I would have liked an on/off control here, but the ClearVolume api
+    * only has a toggle function
+    */
+   public void toggleWireFrameBox() {
+      if (clearVolumeRenderer_ != null) {
+         clearVolumeRenderer_.toggleBoxDisplay();
+      }
+   }
+   
+   public void resetRotationTranslation () {
+      if (clearVolumeRenderer_ != null) {
+         clearVolumeRenderer_.resetRotationTranslation();
+      }
+   }
+   
+   /**
+    * It appears that the clip range in teh ClearVolume Renderer goes from 
+    * -1 to 1
+    * @param axis desired axies (X=0, Y=1, Z=2, defined in ClearVolumePlugin)
+    * @param minVal minimum value form the slider
+    * @param maxVal maxmimum value form the slider
+    */
+   public void setClip(int axis, int minVal, int maxVal) {
+      if (clearVolumeRenderer_ != null) {
+         float min = ( (float) minVal / (float) CVInspectorPanel.SLIDERRANGE ) * 2 - 1;
+         float max = ( (float) maxVal / (float) CVInspectorPanel.SLIDERRANGE ) * 2 - 1;
+         float[] clipBox = clearVolumeRenderer_.getClipBox();
+         switch (axis) {
+                 case CVInspectorPanel.XAXIS : 
+                    clipBox[0] = min;  clipBox[1] = max;
+                    break;
+                 case CVInspectorPanel.YAXIS :
+                    clipBox[2] = min;  clipBox[3] = max;
+                    break;
+                  case CVInspectorPanel.ZAXIS :
+                    clipBox[4] = min;  clipBox[5] = max;
+                    break;
+         }
+         clearVolumeRenderer_.setClipBox(clipBox);         
+      }
+   }
+   
+   
    
    // Following functions are included since we need to be a DisplayWindow, not a DataViewer
 
@@ -425,7 +475,9 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public void toggleFullScreen() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+   if (clearVolumeRenderer_ != null) {
+         clearVolumeRenderer_.toggleFullScreen();
+      }
    }
 
    @Override
