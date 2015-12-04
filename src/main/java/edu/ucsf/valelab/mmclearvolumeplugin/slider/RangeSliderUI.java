@@ -11,6 +11,7 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
@@ -374,7 +375,7 @@ class RangeSliderUI extends BasicSliderUI {
      */
     public class ChangeHandler implements ChangeListener {
         public void stateChanged(ChangeEvent arg0) {
-            if (!lowerDragging && !upperDragging) {
+            if (!lowerDragging && !upperDragging &&!middleDragging) {
                 calculateThumbLocation();
                 slider.repaint();
             }
@@ -463,9 +464,11 @@ class RangeSliderUI extends BasicSliderUI {
           // Handle middle part pressed
           if (middlePressed) {
              switch (slider.getOrientation()) {
+                case JSlider.VERTICAL:
+                   offset = currentMouseY;
+                   break;
                 case JSlider.HORIZONTAL:
-                   offset = currentMouseX - thumbRect.x;
-                   System.out.println("Sliding the middle");
+                   offset = currentMouseX;
                    break;
              }
              middleDragging = true;
@@ -476,6 +479,7 @@ class RangeSliderUI extends BasicSliderUI {
         public void mouseReleased(MouseEvent e) {
             lowerDragging = false;
             upperDragging = false;
+            middleDragging = false;
             slider.setValueIsAdjusting(false);
             super.mouseReleased(e);
         }
@@ -491,14 +495,13 @@ class RangeSliderUI extends BasicSliderUI {
 
             if (lowerDragging) {
                 slider.setValueIsAdjusting(true);
-                moveLowerThumb();
-                
+                moveLowerThumb(new Point(currentMouseX, currentMouseY), offset);
             } else if (upperDragging) {
                 slider.setValueIsAdjusting(true);
-                moveUpperThumb();
+                moveUpperThumb(new Point(currentMouseX, currentMouseY), offset);
             } else if (middleDragging) {
                slider.setValueIsAdjusting(true);
-               moveMiddle();
+               moveMiddle(new Point(currentMouseX, currentMouseY));
             }
         }
         
@@ -511,13 +514,13 @@ class RangeSliderUI extends BasicSliderUI {
          * Moves the location of the lower thumb, and sets its corresponding 
          * value in the slider.
          */
-        private void moveLowerThumb() {
-            int thumbMiddle = 0;
+        private void moveLowerThumb(Point newPos, int offset) {
+            int thumbMiddle;
             
             switch (slider.getOrientation()) {
             case JSlider.VERTICAL:      
                 int halfThumbHeight = thumbRect.height / 2;
-                int thumbTop = currentMouseY - offset;
+                int thumbTop = newPos.y - offset;
                 int trackTop = trackRect.y;
                 int trackBottom = trackRect.y + (trackRect.height - 1);
                 int vMax = yPositionForValue(slider.getValue() + slider.getExtent());
@@ -540,7 +543,7 @@ class RangeSliderUI extends BasicSliderUI {
                 
             case JSlider.HORIZONTAL:
                 int halfThumbWidth = thumbRect.width / 2;
-                int thumbLeft = currentMouseX - offset;
+                int thumbLeft = newPos.x - offset;
                 int trackLeft = trackRect.x;
                 int trackRight = trackRect.x + (trackRect.width - 1);
                 int hMax = xPositionForValue(slider.getValue() + slider.getExtent());
@@ -570,13 +573,13 @@ class RangeSliderUI extends BasicSliderUI {
          * Moves the location of the upper thumb, and sets its corresponding 
          * value in the slider.
          */
-        private void moveUpperThumb() {
-            int thumbMiddle = 0;
+        private void moveUpperThumb(Point newPos, int offset) {
+            int thumbMiddle;
             
             switch (slider.getOrientation()) {
             case JSlider.VERTICAL:      
                 int halfThumbHeight = thumbRect.height / 2;
-                int thumbTop = currentMouseY - offset;
+                int thumbTop = newPos.y - offset;
                 int trackTop = trackRect.y;
                 int trackBottom = trackRect.y + (trackRect.height - 1);
                 int vMin = yPositionForValue(slider.getValue());
@@ -599,7 +602,7 @@ class RangeSliderUI extends BasicSliderUI {
                 
             case JSlider.HORIZONTAL:
                 int halfThumbWidth = thumbRect.width / 2;
-                int thumbLeft = currentMouseX - offset;
+                int thumbLeft = newPos.x - offset;
                 int trackLeft = trackRect.x;
                 int trackRight = trackRect.x + (trackRect.width - 1);
                 int hMin = xPositionForValue(slider.getValue());
@@ -620,8 +623,6 @@ class RangeSliderUI extends BasicSliderUI {
                 slider.setExtent(valueForXPosition(thumbMiddle) - slider.getValue());
                 break;
                 
-            default:
-                return;
             }
         }
         
@@ -629,44 +630,48 @@ class RangeSliderUI extends BasicSliderUI {
          * Moves the location of the upper thumb, and sets its corresponding 
          * value in the slider.
          */
-        private void moveMiddle() {
+        private void moveMiddle(Point newPos) {
+            synchronized (slider) {
             int thumbMiddle = 0;
             
             switch (slider.getOrientation()) {
             case JSlider.VERTICAL:   
                
-               // TODO!
-                
+               moveUpperThumb(newPos, offset - upperThumbRect.y);
+               moveLowerThumb(newPos, offset - thumbRect.y);
+                offset = newPos.y;
                 break;
                 
             case JSlider.HORIZONTAL:
-               /*
-                int halfThumbWidth = thumbRect.width / 2;
-                int thumbLeft = currentMouseX - offset;
-                int trackLeft = trackRect.x;
-                int trackRight = trackRect.x + (trackRect.width - 1);
-                int hMin = xPositionForValue(slider.getValue());
-
-                // Apply bounds to thumb position.
-                if (drawInverted()) {
-                    trackRight = hMin;
-                } else {
-                    trackLeft = hMin;
-                }
-                thumbLeft = Math.max(thumbLeft, trackLeft - halfThumbWidth);
-                thumbLeft = Math.min(thumbLeft, trackRight - halfThumbWidth);
-
-                setUpperThumbLocation(thumbLeft, thumbRect.y);
-                
-                // Update slider extent.
-                thumbMiddle = thumbLeft + halfThumbWidth;
-                slider.setExtent(valueForXPosition(thumbMiddle) - slider.getValue());
-*/
+               // offset is now actually the mouse position when the mouse started
+               // its drag, we need to calculate the offset and feed it into the 
+               // slider movement functions
+               
+               // We do some check trying to keep the range between top and bottom
+               // constant.  However, fast dragging still causes problems
+               if (newPos.x > offset) {
+                  int oldUTX = upperThumbRect.x;
+                  moveUpperThumb(newPos, offset - upperThumbRect.x);
+                  if (upperThumbRect.x > oldUTX) {
+                     moveLowerThumb(newPos, offset - thumbRect.x);
+                  } 
+               } else {
+                  int oldLTX = thumbRect.x;
+                  moveLowerThumb(newPos, offset - thumbRect.x);
+                  if (thumbRect.x < oldLTX) { 
+                     // still runs the risk of inadvertent moves
+                     // when we did move, but not the complete distance
+                     moveUpperThumb(newPos, offset -upperThumbRect.x);
+                  }
+               }
+               offset = newPos.x;
+               
                 break;
                 
             default:
                 return;
             }
+        }
         }
         
     }
