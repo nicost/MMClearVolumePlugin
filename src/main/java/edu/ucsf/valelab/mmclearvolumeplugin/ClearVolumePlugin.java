@@ -15,13 +15,6 @@
 
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
-import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
-import java.awt.Dimension;
-import java.awt.event.ActionEvent;
-import javax.swing.JButton;
-import javax.swing.JLabel;
-import javax.swing.event.ChangeEvent;
-import net.miginfocom.swing.MigLayout;
 import org.micromanager.MenuPlugin;
 import org.micromanager.Studio;
 import org.micromanager.display.InspectorPanel;

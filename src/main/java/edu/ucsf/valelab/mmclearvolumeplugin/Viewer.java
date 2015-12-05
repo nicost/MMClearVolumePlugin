@@ -403,7 +403,7 @@ public class Viewer implements DisplayWindow {
    }
    
    /**
-    * It appears that the clip range in teh ClearVolume Renderer goes from 
+    * It appears that the clip range in the ClearVolume Renderer goes from 
     * -1 to 1
     * @param axis desired axies (X=0, Y=1, Z=2, defined in ClearVolumePlugin)
     * @param minVal minimum value form the slider
