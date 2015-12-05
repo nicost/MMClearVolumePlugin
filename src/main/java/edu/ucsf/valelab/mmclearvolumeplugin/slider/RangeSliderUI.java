@@ -1,5 +1,6 @@
 /**
  * @author ernieyu https://github.com/ernieyu/Swing-range-slider
+ * Modified by @nicost to allow moving the complete range 
  * @license MIT
  */
 package edu.ucsf.valelab.mmclearvolumeplugin.slider;
@@ -512,7 +513,7 @@ class RangeSliderUI extends BasicSliderUI {
             moveLowerThumb(new Point(currentMouseX, currentMouseY), offset);
          } else if (upperDragging) {
             slider.setValueIsAdjusting(true);
-            moveUpperThumb(new Point(currentMouseX, currentMouseY), offset, 0);
+            moveUpperThumb(new Point(currentMouseX, currentMouseY), offset);
          } else if (middleDragging) {
             slider.setValueIsAdjusting(true);
             moveMiddle(new Point(currentMouseX, currentMouseY));
@@ -585,7 +586,7 @@ class RangeSliderUI extends BasicSliderUI {
        * Moves the location of the upper thumb, and sets its corresponding value
        * in the slider.
        */
-      private void moveUpperThumb(Point newPos, int offset, int lowerLimit) {
+      private void moveUpperThumb(Point newPos, int offset) {
          int thumbMiddle;
 
          switch (slider.getOrientation()) {
@@ -625,7 +626,7 @@ class RangeSliderUI extends BasicSliderUI {
                } else {
                   trackLeft = hMin;
                }
-               thumbLeft = Math.max(thumbLeft, trackLeft - halfThumbWidth + lowerLimit);
+               thumbLeft = Math.max(thumbLeft, trackLeft - halfThumbWidth);
                thumbLeft = Math.min(thumbLeft, trackRight - halfThumbWidth);
 
                setUpperThumbLocation(thumbLeft, thumbRect.y);
@@ -644,46 +645,54 @@ class RangeSliderUI extends BasicSliderUI {
        */
       private void moveMiddle(Point newPos) {
          synchronized (slider) {
-            int thumbMiddle = 0;
 
             switch (slider.getOrientation()) {
-               case JSlider.VERTICAL:
+               case JSlider.VERTICAL: {
 
-                  moveUpperThumb(newPos, offset - upperThumbRect.y, 0);
-                  moveLowerThumb(newPos, offset - thumbRect.y);
+                  int distance = upperThumbRect.y - thumbRect.y;
+                  if (newPos.y > offset) {
+                     int oldUTY = upperThumbRect.y;
+                     moveUpperThumb(newPos, offset - upperThumbRect.y);
+                     if (upperThumbRect.x > oldUTY) {
+                        moveLowerThumb(new Point(upperThumbRect.y - distance, newPos.x), 0);
+                     }
+                  } else {
+                     int oldLTY = thumbRect.y;
+                     moveLowerThumb(newPos, offset - thumbRect.y);
+                     if (thumbRect.x < oldLTY) {
+                        moveUpperThumb(new Point (thumbRect.y + distance, newPos.x), 0);
+                     }
+                  }
                   offset = newPos.y;
-                  break;
+               }
+               break;
+               
 
-               case JSlider.HORIZONTAL:
-               // offset is now actually the mouse position when the mouse started
+               case JSlider.HORIZONTAL: {
+                  // offset is now actually the mouse position when the mouse started
                   // its drag, we need to calculate the offset and feed it into the 
-                  // slider movement functions
-
-               // We do some check trying to keep the range between top and bottom
-                  // constant.  However, fast dragging still causes problems
+                  // slider movement functions.
+                  // We ensure that the range between top and bottom stays constant
+                  
+                  int distance = upperThumbRect.x - thumbRect.x;
                   if (newPos.x > offset) {
                      int oldUTX = upperThumbRect.x;
-                     moveUpperThumb(newPos, offset - upperThumbRect.x, 0);
+                     moveUpperThumb(newPos, offset - upperThumbRect.x);
                      if (upperThumbRect.x > oldUTX) {
-                        moveLowerThumb(newPos, offset - thumbRect.x);
+                        moveLowerThumb(new Point(upperThumbRect.x - distance, newPos.y), 0);
                      }
                   } else {
                      int oldLTX = thumbRect.x;
-                     int limit = upperThumbRect.x - thumbRect.x;
                      moveLowerThumb(newPos, offset - thumbRect.x);
                      if (thumbRect.x < oldLTX) {
-                        // still runs the risk of inadvertent moves
-                        // when we did move, but not the complete distance
-                        moveUpperThumb(newPos, offset - upperThumbRect.x, 0);
+                        moveUpperThumb(new Point (thumbRect.x + distance, newPos.y), 0);
                      }
                   }
                   offset = newPos.x;
-
-                  break;
-
+               }
+               break;
             }
          }
       }
-
    }
 }
