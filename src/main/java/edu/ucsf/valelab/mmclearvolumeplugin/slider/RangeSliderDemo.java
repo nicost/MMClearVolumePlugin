@@ -43,6 +43,7 @@ public class RangeSliderDemo extends JPanel {
         
         // Add listener to update display.
         rangeSlider.addChangeListener(new ChangeListener() {
+            @Override
             public void stateChanged(ChangeEvent e) {
                 RangeSlider slider = (RangeSlider) e.getSource();
                 rangeSliderValue1.setText(String.valueOf(slider.getValue()));

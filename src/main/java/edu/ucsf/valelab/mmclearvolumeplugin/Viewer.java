@@ -29,6 +29,7 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
+import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -172,7 +173,7 @@ public class Viewer implements DisplayWindow {
 
    /**
     * Code that needs to register this instance with various managers and
-    * listeners Could have been in the constructor, except that it is unsafe to
+    * listeners. Could have been in the constructor, except that it is unsafe to
     * register our instance before it is completed. Needs to be called right
     * after the constructor.
     */
@@ -184,9 +185,10 @@ public class Viewer implements DisplayWindow {
       displayBus_.register(this);    
       studio_.getDisplayManager().addViewer(this);
       // Needed to initialize the histograms
+      // TODO: check if this can now be removed
       DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
       // Ensure there are histograms for our display.
-       studio_.getDisplayManager().updateHistogramDisplays(getDisplayedImages(), this);
+      studio_.getDisplayManager().updateHistogramDisplays(getDisplayedImages(), this);
 
       studio_.getDisplayManager().raisedToTop(this);
       // used to reference our instance within the listeners:
@@ -197,13 +199,14 @@ public class Viewer implements DisplayWindow {
       cvFrame_.addWindowFocusListener(new WindowFocusListener() {
          @Override
          public void windowGainedFocus(WindowEvent e) {
-            System.out.println("Our window got focus");
             studio_.getDisplayManager().raisedToTop(ourViewer);
          }
 
          @Override
          public void windowLostFocus(WindowEvent e) {
-            System.out.println("Our window lost focus");
+            // since clearVolume changed the aplication icon, change it back here:
+            cvFrame_.setIconImage(Toolkit.getDefaultToolkit().getImage(
+               getClass().getResource("/org/micromanager/icons/microscope.gif")));
          }
       }
       );
@@ -403,6 +406,22 @@ public class Viewer implements DisplayWindow {
    }
    
    /**
+    * Centers the visible part of the ClipBox
+    * This really needs experimentation to figure out how clearVlume defines
+    * everything
+    * For now, assume that 0, 0 is in the center of the full volume, and 
+    * that -1 and 1 are at the edges of the volume
+    */
+   public void center() {
+      if (clearVolumeRenderer_ != null) {
+         float[] clipBox = clearVolumeRenderer_.getClipBox();
+         clearVolumeRenderer_.setTranslationX( (clipBox[1] - clipBox[0]) / 2.0);
+         clearVolumeRenderer_.setTranslationY( (clipBox[3] - clipBox[2]) / 2.0);
+         clearVolumeRenderer_.setTranslationZ( (clipBox[5] - clipBox[4]) / 2.0);
+      }
+   }
+   
+   /**
     * It appears that the clip range in the ClearVolume Renderer goes from 
     * -1 to 1
     * @param axis desired axies (X=0, Y=1, Z=2, defined in ClearVolumePlugin)
@@ -429,6 +448,11 @@ public class Viewer implements DisplayWindow {
       }
    }
    
+   public float[] getClipBox() {
+      if (clearVolumeRenderer_ != null)
+         return clearVolumeRenderer_.getClipBox();
+      return null;
+   }
    
    
    // Following functions are included since we need to be a DisplayWindow, not a DataViewer
@@ -445,12 +469,13 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public void adjustZoom(double d) {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+      // Not sure if this should be implemented...
    }
 
    @Override
    public double getMagnification() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+      // Not sure if this should be implemented
+      return 1.0;
    }
 
    @Override
@@ -460,7 +485,7 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public ImagePlus getImagePlus() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+      throw new UnsupportedOperationException("What ImagePlus do you want?"); //To change body of generated methods, choose Tools | Templates.
    }
 
    @Override

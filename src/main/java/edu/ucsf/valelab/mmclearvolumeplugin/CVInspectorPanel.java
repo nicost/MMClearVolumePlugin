@@ -1,4 +1,17 @@
-
+/**
+ * Binding to ClearVolume 3D viewer View Micro-Manager datasets in 3D
+ *
+ * AUTHOR: Nico Stuurman COPYRIGHT: Regents of the University of California,
+ * 2015 LICENSE: This file is distributed under the BSD license. License text is
+ * included with the source distribution.
+ *
+ * This file is distributed in the hope that it will be useful, but WITHOUT ANY
+ * WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR
+ * A PARTICULAR PURPOSE.
+ *
+ * IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+ */
 
 
 package edu.ucsf.valelab.mmclearvolumeplugin;
@@ -21,6 +34,7 @@ public final class CVInspectorPanel extends InspectorPanel {
    private Viewer viewer_;
    
    static public final int SLIDERRANGE = 256;
+   static public final int SLIDERPIXELWIDTH = 256;
    static public final int XAXIS = 0;
    static public final int YAXIS = 1;
    static public final int ZAXIS = 2;
@@ -41,13 +55,31 @@ public final class CVInspectorPanel extends InspectorPanel {
       
    }
    
+   /**
+    * Called whenever we are attached to a new viewer 
+    * @param viewer 
+    */
    @Override
    public void setDataViewer(DataViewer viewer) {
+      // although this should always be a valid viewwer, check anyways
       if (! (viewer instanceof Viewer) )
          return;
       viewer_ = (Viewer) viewer;
       
-      // TODO: update range sliders with clipped region of current viewer
+      // update range sliders with clipped region of current viewer
+      float[] clipBox = viewer_.getClipBox();
+      if (clipBox != null) {
+         xSlider_.setValue(clipValToSliderVal(clipBox[0]));
+         xSlider_.setUpperValue(clipValToSliderVal(clipBox[1]));
+         ySlider_.setValue(clipValToSliderVal(clipBox[2]));
+         ySlider_.setUpperValue(clipValToSliderVal(clipBox[3]));
+         zSlider_.setValue(clipValToSliderVal(clipBox[4]));
+         zSlider_.setUpperValue(clipValToSliderVal(clipBox[5]));
+      }
+   }
+   
+   private static int clipValToSliderVal (float clipVal) {
+      return Math.round ( (clipVal + 1) / 2 * SLIDERRANGE );
    }
    
    @Override
@@ -65,6 +97,7 @@ public final class CVInspectorPanel extends InspectorPanel {
       // calling overridable methods in the constructor
       setLayout(new MigLayout("flowx"));
       JButton resetButton = new JButton("Reset");
+      resetButton.setToolTipText("Resets rotation, and centers the complete volume");
       resetButton.addActionListener( (ActionEvent e) -> {
          if (getViewer() != null) {
             getViewer().resetRotationTranslation();
@@ -73,16 +106,38 @@ public final class CVInspectorPanel extends InspectorPanel {
       add(resetButton, "");
       
       JButton showBoxButton = new JButton("Toggle Box");
+      showBoxButton.setToolTipText("Toggle visibility of the wireFrame Box");
       showBoxButton.addActionListener((ActionEvent e) -> {
          if (getViewer() != null) {
             getViewer().toggleWireFrameBox();
          }
       });
-      add(showBoxButton, "wrap");
+      add(showBoxButton, "");
+      
+      JButton centerButton = new JButton("Center");
+      centerButton.setToolTipText("Moves middle of visible part to the center");
+      centerButton.addActionListener( (ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().center();
+         }
+      });
+      add(centerButton, "wrap");
+      
       
       addLabel("X");
       xSlider_ = makeSlider(XAXIS);
-      add(xSlider_, "wrap");
+      add(xSlider_, "");
+      
+      JButton fullSliderRangeButton = new JButton ("Full");
+      fullSliderRangeButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            xSlider_.setValue(0); xSlider_.setUpperValue(SLIDERRANGE);
+            ySlider_.setValue(0); ySlider_.setUpperValue(SLIDERRANGE);
+            zSlider_.setValue(0); zSlider_.setUpperValue(SLIDERRANGE);
+            // TODO: check that this triggers resetting the Viewer's ClipBox
+         }
+      });
+      add(fullSliderRangeButton, "span y 3, wrap");
       
       addLabel("Y");
       ySlider_ = makeSlider(YAXIS);
@@ -96,7 +151,7 @@ public final class CVInspectorPanel extends InspectorPanel {
    
     private RangeSlider makeSlider(final int axis) {
       final RangeSlider slider = new RangeSlider();
-      slider.setPreferredSize(new Dimension(240,
+      slider.setPreferredSize(new Dimension(SLIDERPIXELWIDTH,
               slider.getPreferredSize().height));
       slider.setMinimum(0);
       slider.setMaximum(SLIDERRANGE);
@@ -114,6 +169,5 @@ public final class CVInspectorPanel extends InspectorPanel {
       JLabel label = new JLabel(labelText);
       add(label, "");
     }
-   
-   
+    
 }

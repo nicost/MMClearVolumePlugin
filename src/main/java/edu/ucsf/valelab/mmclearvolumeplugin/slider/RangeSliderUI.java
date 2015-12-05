@@ -398,8 +398,8 @@ class RangeSliderUI extends BasicSliderUI {
    }
 
    /**
-    * Listener to handle mouse movements in the slider track. Modified to handle
-    * dragging of the middle range by Nico Stuurman, Dec. 2015
+    * Listener to handle mouse movements in the slider track. 
+    * Modified to handle dragging of the middle range by Nico Stuurman, Dec. 2015
     */
    public class RangeTrackListener extends TrackListener {
 
