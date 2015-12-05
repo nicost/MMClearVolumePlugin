@@ -76,6 +76,7 @@ public final class CVInspectorPanel extends InspectorPanel {
          zSlider_.setValue(clipValToSliderVal(clipBox[4]));
          zSlider_.setUpperValue(clipValToSliderVal(clipBox[5]));
       }
+      viewer_.updateHistograms();
    }
    
    private static int clipValToSliderVal (float clipVal) {
@@ -103,16 +104,8 @@ public final class CVInspectorPanel extends InspectorPanel {
             getViewer().resetRotationTranslation();
          }
       });
-      add(resetButton, "");
+      add(resetButton, "span 4, split 4");
       
-      JButton showBoxButton = new JButton("Toggle Box");
-      showBoxButton.setToolTipText("Toggle visibility of the wireFrame Box");
-      showBoxButton.addActionListener((ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().toggleWireFrameBox();
-         }
-      });
-      add(showBoxButton, "");
       
       JButton centerButton = new JButton("Center");
       centerButton.setToolTipText("Moves middle of visible part to the center");
@@ -121,8 +114,46 @@ public final class CVInspectorPanel extends InspectorPanel {
             getViewer().center();
          }
       });
-      add(centerButton, "wrap");
+      add(centerButton, "");
       
+      JButton straightButton = new JButton("Straighten");
+      straightButton.setToolTipText("Rotates the object back onto the xyz axes");
+      straightButton.addActionListener( (ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().straighten();
+         }
+      });
+      add(straightButton, "wrap");
+      
+      JButton showBoxButton = new JButton("Toggle Box");
+      showBoxButton.setToolTipText("Toggle visibility of the wireFrame Box");
+      showBoxButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().toggleWireFrameBox();
+         }
+      });
+      add(showBoxButton, "span 4, split 4");
+      
+      JButton parmsButton = new JButton("Toggle Parameters");
+      parmsButton.setToolTipText("Toggle visibility of Parameters");
+      parmsButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().toggleParametersListFrame();
+         }
+      });
+      add(parmsButton, "wrap");
+      
+      /*
+      Controls do not seem to do anything....????
+      JButton controlsButton = new JButton("Toggle Controls");
+      controlsButton.setToolTipText("Toggle visibility of Controls");
+      controlsButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().toggleControlPanelDisplay();
+         }
+      });
+      add(controlsButton, "wrap");
+      */
       
       addLabel("X");
       xSlider_ = makeSlider(XAXIS);

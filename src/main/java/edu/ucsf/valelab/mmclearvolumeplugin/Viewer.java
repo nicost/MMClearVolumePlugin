@@ -184,11 +184,10 @@ public class Viewer implements DisplayWindow {
 
       displayBus_.register(this);    
       studio_.getDisplayManager().addViewer(this);
-      // Needed to initialize the histograms
-      // TODO: check if this can now be removed
-      DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
+
       // Ensure there are histograms for our display.
-      studio_.getDisplayManager().updateHistogramDisplays(getDisplayedImages(), this);
+      // studio_.getDisplayManager().updateHistogramDisplays(getDisplayedImages(), this);
+      updateHistograms();
 
       studio_.getDisplayManager().raisedToTop(this);
       // used to reference our instance within the listeners:
@@ -342,7 +341,10 @@ public class Viewer implements DisplayWindow {
     * This method ensures that the Inspector histograms have up-to-date data
     * to display.
     */
-   private void updateHistograms() {
+   public void updateHistograms() {
+      // Needed to initialize the histograms
+      // TODO: check if this can now be removed
+      DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
       studio_.displays().updateHistogramDisplays(getDisplayedImages(), this);
    }
 
@@ -399,27 +401,77 @@ public class Viewer implements DisplayWindow {
       }
    }
    
+   public void toggleControlPanelDisplay() {
+      if (clearVolumeRenderer_ != null) {
+         clearVolumeRenderer_.toggleControlPanelDisplay();
+      }
+   }
+   
+   public void toggleParametersListFrame() {
+      if (clearVolumeRenderer_ != null) {
+         clearVolumeRenderer_.toggleParametersListFrame();
+      }
+   }
+   
+   
    public void resetRotationTranslation () {
       if (clearVolumeRenderer_ != null) {
          clearVolumeRenderer_.resetRotationTranslation();
+         float x = clearVolumeRenderer_.getTranslationX();
+         float y = clearVolumeRenderer_.getTranslationY();
+         float z = clearVolumeRenderer_.getTranslationZ();
+         System.out.println("Rotation now is: " + x + ", " + y + ", " + z);
       }
    }
    
    /**
     * Centers the visible part of the ClipBox
-    * This really needs experimentation to figure out how clearVlume defines
-    * everything
-    * For now, assume that 0, 0 is in the center of the full volume, and 
+    * It seems that 0, 0 is in the center of the full volume, and 
     * that -1 and 1 are at the edges of the volume
     */
    public void center() {
       if (clearVolumeRenderer_ != null) {
          float[] clipBox = clearVolumeRenderer_.getClipBox();
-         clearVolumeRenderer_.setTranslationX( (clipBox[1] - clipBox[0]) / 2.0);
-         clearVolumeRenderer_.setTranslationY( (clipBox[3] - clipBox[2]) / 2.0);
-         clearVolumeRenderer_.setTranslationZ( (clipBox[5] - clipBox[4]) / 2.0);
+         clearVolumeRenderer_.setTranslationX( -(clipBox[1] + clipBox[0]) / 2.0f);
+         clearVolumeRenderer_.setTranslationY( -(clipBox[3] + clipBox[2]) / 2.0f);
+         // do not change TRanslationZ, since that mainly changes how close we are 
+         // to the object, not really the rotation point
+         // clearVolumeRenderer_.setTranslationZ( -5);
       }
    }
+   
+   /**
+    * Resets the rotation so that the object ligns up with the xyz axis.
+    */
+   public void straighten() {
+      if (clearVolumeRenderer_ != null) {
+         // Convoluted way to resey the rotation
+         // I probably should use rotationControllers...
+         float x = clearVolumeRenderer_.getTranslationX();
+         float y = clearVolumeRenderer_.getTranslationY();
+         float z = clearVolumeRenderer_.getTranslationZ();
+         clearVolumeRenderer_.resetRotationTranslation();
+         clearVolumeRenderer_.setTranslationX(x);
+         clearVolumeRenderer_.setTranslationY(y);
+         clearVolumeRenderer_.setTranslationZ(z);
+      }
+   }
+   
+   /**
+    * Print statements to learn about the renderer.  Should be removed before release
+    */
+   private void printRendererInfo() {
+      float x = clearVolumeRenderer_.getTranslationX();
+      float y = clearVolumeRenderer_.getTranslationY();
+      float z = clearVolumeRenderer_.getTranslationZ();
+      System.out.println("Translation now is: " + x + ", " + y + ", " + z);
+      String clipBoxString = "Clipbox: ";
+      for (int i = 0; i < 6; i++) {
+         clipBoxString += ", " + clearVolumeRenderer_.getClipBox()[i];
+      }
+      System.out.println(clipBoxString);
+   }
+   
    
    /**
     * It appears that the clip range in the ClearVolume Renderer goes from 
