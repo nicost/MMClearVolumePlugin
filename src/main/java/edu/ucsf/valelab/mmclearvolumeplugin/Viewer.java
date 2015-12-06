@@ -186,7 +186,6 @@ public class Viewer implements DisplayWindow {
       studio_.getDisplayManager().addViewer(this);
 
       // Ensure there are histograms for our display.
-      // studio_.getDisplayManager().updateHistogramDisplays(getDisplayedImages(), this);
       updateHistograms();
 
       studio_.getDisplayManager().raisedToTop(this);
