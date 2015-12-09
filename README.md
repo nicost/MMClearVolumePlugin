@@ -1,5 +1,5 @@
 # MMClearVolumePlugin
-Micro-Manager 2.0 plugin that opens datasets in the ClearVolume 3D viewer.  
+[Micro-Manager](http://micro-manager.org) 2.0 plugin that opens datasets in the ClearVolume 3D viewer.  
 
 [ClearVolume](http://fiji.sc/ClearVolume) is a volume renderer developed at the MPI-CBG in Dresden.  Th MMClearVolume plugin 
 lets you open a ClearVolume viewer on a dataset in Micro-Manager.  It only works in Micro-Manager 2.0, not in Micro-Manager 1.4
