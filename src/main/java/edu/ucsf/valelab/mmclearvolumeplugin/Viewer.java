@@ -123,7 +123,7 @@ public class Viewer implements DisplayWindow {
 
       maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
 
-      drawVolume(0);
+      drawVolume(theDisplay.getDisplayedImages().get(0).getCoords().getTime());
 
       clearVolumeRenderer_.setVisible(true);
       clearVolumeRenderer_.requestDisplay();
