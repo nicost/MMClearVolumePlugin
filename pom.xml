@@ -5,7 +5,7 @@
    <artifactId>MMClearVolumePlugin_</artifactId>
    <packaging>jar</packaging>
    <version>0.1-SNAPSHOT</version>
-   <name>ClearVolumePlugin</name>
+   <name>MMClearVolumePlugin</name>
    <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
    <description>An Micro-Manager 2.0 plugin that opens Micro-Manager data in the ClearVolume 3D viewer</description>
    <properties>
