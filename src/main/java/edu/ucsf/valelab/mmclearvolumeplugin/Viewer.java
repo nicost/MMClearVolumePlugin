@@ -37,6 +37,7 @@ import java.awt.event.WindowFocusListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import org.micromanager.Studio;
@@ -83,7 +84,6 @@ public class Viewer implements DisplayWindow {
       }
       ds_ = theDisplay.getDisplaySettings().copy().build();
       store_ = theDisplay.getDatastore();
-      final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       Image randomImage = store_.getAnyImage();
 
@@ -119,51 +119,13 @@ public class Viewer implements DisplayWindow {
       });
 
       clearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
-      clearVolumeRenderer_.setVisible(true);
 
-      // create fragmented memory for each stack that needs sending to CV:
-      final Metadata metadata = randomImage.getMetadata();
-      final SummaryMetadata summary = store_.getSummaryMetadata();
+
       maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
 
-      for (int ch = 0; ch < nrCh; ch++) {
-         FragmentedMemory lFragmentedMemory = new FragmentedMemory();
-         for (int i = 0; i < nrZ; i++) {
-            coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(0).stagePosition(0);
-            Coords coords = coordsBuilder_.build();
+      drawVolume(0);
 
-            // Bypass Micro-Manager api to get access to the ByteBuffers
-            DefaultImage image = (DefaultImage) store_.getImage(coords);
-
-            // add the contiguous memory as fragment:
-            lFragmentedMemory.add(image.getPixelBuffer());
-         }
-
-         // pass data to renderer: (this calls takes a long time!)
-         clearVolumeRenderer_.setVolumeDataBuffer(ch,
-                 lFragmentedMemory,
-                 randomImage.getWidth(),
-                 randomImage.getHeight(),
-                 nrZ);
-         
-         // TODO: correct x and y voxel sizes using aspect ratio
-         clearVolumeRenderer_.setVoxelSize(ch, metadata.getPixelSizeUm(),
-                 metadata.getPixelSizeUm(), summary.getZStepUm());
-
-         // Set various display options:
-         Color chColor = ds_.getChannelColors()[ch];
-         clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
-         float max = (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
-                         (float) maxValue_;
-         float min = (float) ds_.getChannelContrastSettings()[ch].getContrastMins()[0] / 
-                         (float) maxValue_;
-         clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
-         Double[] contrastGammas = ds_.getChannelContrastSettings()[ch].getContrastGammas();
-         if (contrastGammas != null) {
-            clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
-         }
-      }
-
+      clearVolumeRenderer_.setVisible(true);
       clearVolumeRenderer_.requestDisplay();
       clearVolumeRenderer_.toggleControlPanelDisplay();
       cvFrame_.pack();
@@ -326,19 +288,19 @@ public class Viewer implements DisplayWindow {
             imageList.add(store_.getImage(coords));
          }
          */
-         
+
          // Only return the middle image
          coordsBuilder_ = coordsBuilder_.z(nrZ / 2).channel(ch).time(0).stagePosition(0);
          Coords coords = coordsBuilder_.build();
          imageList.add(store_.getImage(coords));
-         
+
       }
       return imageList;
    }
-   
-  /**
-    * This method ensures that the Inspector histograms have up-to-date data
-    * to display.
+
+   /**
+    * This method ensures that the Inspector histograms have up-to-date data to
+    * display.
     */
    public void updateHistograms() {
       // Needed to initialize the histograms
@@ -346,7 +308,6 @@ public class Viewer implements DisplayWindow {
       DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
       studio_.displays().updateHistogramDisplays(getDisplayedImages(), this);
    }
-
 
    @Override
    public void requestRedraw() {
@@ -384,7 +345,62 @@ public class Viewer implements DisplayWindow {
       return lTransfertFunction;
    }
 
-   
+   private void drawVolume(int timePoint) {
+      // create fragmented memory for each stack that needs sending to CV:
+      Image randomImage = store_.getAnyImage();
+      final Metadata metadata = randomImage.getMetadata();
+      final SummaryMetadata summary = store_.getSummaryMetadata();
+      final int nrZ = store_.getAxisLength(Coords.Z);
+      final int nrCh = store_.getAxisLength(Coords.CHANNEL);
+
+      clearVolumeRenderer_.setVolumeDataUpdateAllowed(false);
+      for (int ch = 0; ch < nrCh; ch++) {
+         FragmentedMemory lFragmentedMemory = new FragmentedMemory();
+         for (int i = 0; i < nrZ; i++) {
+            coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(timePoint).stagePosition(0);
+            Coords coords = coordsBuilder_.build();
+
+            // Bypass Micro-Manager api to get access to the ByteBuffers
+            DefaultImage image = (DefaultImage) store_.getImage(coords);
+
+            // add the contiguous memory as fragment:
+            lFragmentedMemory.add(image.getPixelBuffer());
+         }
+
+         // pass data to renderer: (this calls takes a long time!)
+         clearVolumeRenderer_.setVolumeDataBuffer(
+                 0, 
+                 TimeUnit.SECONDS, 
+                 ch,
+                 lFragmentedMemory,
+                 randomImage.getWidth(),
+                 randomImage.getHeight(),
+                 nrZ, 
+                 metadata.getPixelSizeUm(),
+                 metadata.getPixelSizeUm(), 
+                 summary.getZStepUm());
+
+         // TODO: correct x and y voxel sizes using aspect ratio
+         clearVolumeRenderer_.setVoxelSize(ch, metadata.getPixelSizeUm(),
+                 metadata.getPixelSizeUm(), summary.getZStepUm());
+
+         // Set various display options:
+         Color chColor = ds_.getChannelColors()[ch];
+         clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
+         float max = (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0]
+                 / (float) maxValue_;
+         float min = (float) ds_.getChannelContrastSettings()[ch].getContrastMins()[0]
+                 / (float) maxValue_;
+         clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
+         Double[] contrastGammas = ds_.getChannelContrastSettings()[ch].getContrastGammas();
+         if (contrastGammas != null) {
+            clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
+         }
+      }
+      clearVolumeRenderer_.setVolumeDataUpdateAllowed(true);
+      clearVolumeRenderer_.waitToFinishAllDataBufferCopy(5, TimeUnit.SECONDS);
+   }
+
    /*
     * Series of functions that are merely pass through to the underlying 
     * clearVolumeRenderer
