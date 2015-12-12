@@ -17,12 +17,18 @@
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
+import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollBarAnimateIcon;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.AdjustmentEvent;
+import java.awt.event.AdjustmentListener;
 import javax.swing.JButton;
 import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollBar;
 import javax.swing.event.ChangeEvent;
 import net.miginfocom.swing.MigLayout;
+import org.micromanager.data.Coords;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.InspectorPanel;
 
@@ -40,6 +46,9 @@ public final class CVInspectorPanel extends InspectorPanel {
    static public final int ZAXIS = 2;
    
    private RangeSlider xSlider_, ySlider_, zSlider_;
+   private JScrollBar timeAxisScrollBar_;
+   private JPanel timeSliderPanel_;
+   private boolean animating_ = false;
    
    public CVInspectorPanel() {
       super();
@@ -61,7 +70,7 @@ public final class CVInspectorPanel extends InspectorPanel {
     */
    @Override
    public void setDataViewer(DataViewer viewer) {
-      // although this should always be a valid viewwer, check anyways
+      // although this should always be a valid viewer, check anyways
       if (! (viewer instanceof Viewer) )
          return;
       viewer_ = (Viewer) viewer;
@@ -75,6 +84,22 @@ public final class CVInspectorPanel extends InspectorPanel {
          ySlider_.setUpperValue(clipValToSliderVal(clipBox[3]));
          zSlider_.setValue(clipValToSliderVal(clipBox[4]));
          zSlider_.setUpperValue(clipValToSliderVal(clipBox[5]));
+      }
+      if (viewer_.getDatastore().getAxisLength(Coords.TIME) > 1) {
+         int tp = viewer_.getDisplayedImages().get(0).getCoords().getTime();
+         int max = viewer_.getDatastore().getAxisLength(Coords.TIME) - 1;
+         timeAxisScrollBar_.setValues(tp, 1, 0, max);
+         timeAxisScrollBar_.setSize(new Dimension(SLIDERPIXELWIDTH,
+              timeAxisScrollBar_.getPreferredSize().height));
+         for (AdjustmentListener aj : timeAxisScrollBar_.getAdjustmentListeners()) {
+            timeAxisScrollBar_.removeAdjustmentListener(aj);
+         }
+         timeAxisScrollBar_.addAdjustmentListener((AdjustmentEvent e) -> {
+            viewer_.drawVolume(timeAxisScrollBar_.getValue());
+         });
+         timeSliderPanel_.setVisible(true);
+      } else {
+         timeSliderPanel_.setVisible(false);
       }
       viewer_.updateHistograms();
    }
@@ -177,10 +202,30 @@ public final class CVInspectorPanel extends InspectorPanel {
       addLabel("Z");
       zSlider_ = makeSlider(ZAXIS);
       add(zSlider_, "wrap");
-
+      
+      timeSliderPanel_ = new JPanel(new MigLayout("flowx"));
+      ScrollBarAnimateIcon sbaIcon= new ScrollBarAnimateIcon("t", this);
+      timeSliderPanel_.add(sbaIcon);
+      timeAxisScrollBar_ = new JScrollBar(JScrollBar.HORIZONTAL, 1, 1, 0, 100);
+      timeAxisScrollBar_.setSize(new Dimension(SLIDERPIXELWIDTH,
+              timeAxisScrollBar_.getPreferredSize().height));
+      timeSliderPanel_.add(timeAxisScrollBar_, "growx");
+      add(timeSliderPanel_, "span x 4, growx, wrap");
+      
    }
    
-    private RangeSlider makeSlider(final int axis) {
+   public void toggleAnimation() {
+      animating_ = !animating_;
+      toggleAnimation(animating_);
+   }
+   
+   private void toggleAnimation(boolean start) {
+      if (start) {
+         
+      }
+   }
+   
+   private RangeSlider makeSlider(final int axis) {
       final RangeSlider slider = new RangeSlider();
       slider.setPreferredSize(new Dimension(SLIDERPIXELWIDTH,
               slider.getPreferredSize().height));

@@ -114,6 +114,7 @@ public class Viewer implements DisplayWindow {
       cvFrame_.setSize(new Dimension(randomImage.getWidth(),
               randomImage.getHeight()));
       cvFrame_.add(container);
+
       SwingUtilities.invokeLater(() -> {
          cvFrame_.setVisible(true);
       });
@@ -236,37 +237,37 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public DisplaySettings getDisplaySettings() {
-      System.out.println("getDisplaySettings called");
+      // System.out.println("getDisplaySettings called");
       return ds_;
    }
 
    @Override
    public void registerForEvents(Object o) {
-      System.out.println("Registering for events");
+      // System.out.println("Registering for events");
       displayBus_.register(o);
    }
 
    @Override
    public void unregisterForEvents(Object o) {
-      System.out.println("Unregistering for events");
+      // System.out.println("Unregistering for events");
       displayBus_.unregister(o);
    }
 
    @Override
    public void postEvent(Object o) {
-      System.out.println("Posting event on the EventBus");
+      // System.out.println("Posting event on the EventBus");
       displayBus_.post(o);
    }
 
    @Override
    public Datastore getDatastore() {
-      System.out.println("getDatastore called");
+      // System.out.println("getDatastore called");
       return store_;
    }
 
    @Override
    public void setDisplayedImageTo(Coords coords) {
-      System.out.println("setDisplayedImageTo called and ignored");
+      // System.out.println("setDisplayedImageTo called and ignored");
    }
 
    @Override
@@ -275,7 +276,7 @@ public class Viewer implements DisplayWindow {
     * for multiple time points in the future
     */
    public List<Image> getDisplayedImages() {
-      System.out.println("getDisplayed Images called");
+      // System.out.println("getDisplayed Images called");
       List<Image> imageList = new ArrayList<>();
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
@@ -345,7 +346,7 @@ public class Viewer implements DisplayWindow {
       return lTransfertFunction;
    }
 
-   private void drawVolume(int timePoint) {
+   public final void drawVolume(int timePoint) {
       // create fragmented memory for each stack that needs sending to CV:
       Image randomImage = store_.getAnyImage();
       final Metadata metadata = randomImage.getMetadata();
@@ -353,9 +354,10 @@ public class Viewer implements DisplayWindow {
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
 
+      long startTime = System.currentTimeMillis();
       clearVolumeRenderer_.setVolumeDataUpdateAllowed(false);
       for (int ch = 0; ch < nrCh; ch++) {
-         FragmentedMemory lFragmentedMemory = new FragmentedMemory();
+         FragmentedMemory fragmentedMemory = new FragmentedMemory();
          for (int i = 0; i < nrZ; i++) {
             coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(timePoint).stagePosition(0);
             Coords coords = coordsBuilder_.build();
@@ -364,15 +366,14 @@ public class Viewer implements DisplayWindow {
             DefaultImage image = (DefaultImage) store_.getImage(coords);
 
             // add the contiguous memory as fragment:
-            lFragmentedMemory.add(image.getPixelBuffer());
+            fragmentedMemory.add(image.getPixelBuffer());
          }
 
          // pass data to renderer: (this calls takes a long time!)
-         clearVolumeRenderer_.setVolumeDataBuffer(
-                 0, 
+         clearVolumeRenderer_.setVolumeDataBuffer(0, 
                  TimeUnit.SECONDS, 
                  ch,
-                 lFragmentedMemory,
+                 fragmentedMemory,
                  randomImage.getWidth(),
                  randomImage.getHeight(),
                  nrZ, 
@@ -396,9 +397,13 @@ public class Viewer implements DisplayWindow {
          if (contrastGammas != null) {
             clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
          }
+         System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
       }
       clearVolumeRenderer_.setVolumeDataUpdateAllowed(true);
-      clearVolumeRenderer_.waitToFinishAllDataBufferCopy(5, TimeUnit.SECONDS);
+      System.out.println("Start finishing after " + (System.currentTimeMillis() - startTime) + " ms");
+      // clearVolumeRenderer_.waitToFinishAllDataBufferCopy(0, TimeUnit.SECONDS);
+      System.out.println("Ended finishing after " + (System.currentTimeMillis() - startTime) + " ms");
+     
    }
 
    /*
