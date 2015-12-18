@@ -26,9 +26,7 @@ import com.google.common.eventbus.Subscribe;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
@@ -182,25 +180,22 @@ public class ScrollerPanel extends JPanel {
       ArrayList<String> axes;
       String[] axisOrder = store_.getSummaryMetadata().getAxisOrder();
       if (axisOrder != null) {
-         axes = new ArrayList<String>(Arrays.asList(axisOrder));
+         axes = new ArrayList<>(Arrays.asList(axisOrder));
       }
       else {
-         axes = new ArrayList<String>(store_.getAxes());
+         axes = new ArrayList<>(store_.getAxes());
       }
       for (String axis : axes) {
          // Don't bother creating scrollers for axes with a length of 1.
-         if (store_.getAxisLength(axis) > 1) {
+         if (store_.getAxisLength(axis) > 1 && !axis.equals(Coords.Z)) {
             addScroller(axis);
          }
       }
 
       // Spin up a new thread to handle changes to the scrollbar positions.
       // See runUpdateThread() for more information.
-      updateThread_ = new Thread(new Runnable() {
-         @Override
-         public void run() {
-            runUpdateThread();
-         }
+      updateThread_ = new Thread(() -> {
+         runUpdateThread();
       }, "Scrollbar panel update thread");
       updateThread_.start();
       store_.registerForEvents(this);
@@ -238,12 +233,9 @@ public class ScrollerPanel extends JPanel {
       positionButton.setMargin(new java.awt.Insets(0, 0, 0, 0));
       positionButton.setMinimumSize(new Dimension(30, 18));
       positionButton.setPreferredSize(new Dimension(30, 18));
-      positionButton.addActionListener(new ActionListener() {
-         @Override
-         public void actionPerformed(ActionEvent e) {
-            new PositionPopup(axis, positionButton).show(
-               positionButton, 0, positionButton.getHeight());
-         }
+      positionButton.addActionListener((ActionEvent e) -> {
+         new PositionPopup(axis, positionButton).show(
+                 positionButton, 0, positionButton.getHeight());
       });
       add(positionButton, "grow 0");
 
@@ -254,11 +246,8 @@ public class ScrollerPanel extends JPanel {
             0, store_.getAxisLength(axis));
 
       scrollbar.setMinimumSize(new Dimension(1, 1));
-      scrollbar.addAdjustmentListener(new AdjustmentListener() {
-         @Override
-         public void adjustmentValueChanged(AdjustmentEvent e) {
-            setPosition(axis, scrollbar.getValue());
-         }
+      scrollbar.addAdjustmentListener((AdjustmentEvent e) -> {
+         setPosition(axis, scrollbar.getValue());
       });
       add(scrollbar, "shrinkx, growx");
 
@@ -292,6 +281,7 @@ public class ScrollerPanel extends JPanel {
    /**
     * One of our animation icons has changed state; adjust animation for that
     * icon. Called from the ScrollbarAnimateIcon class.
+    * @param axis
     */
    public void toggleAnimation(String axis) {
       axisToState_.get(axis).isAnimated_ = !axisToState_.get(axis).isAnimated_;
@@ -371,6 +361,7 @@ public class ScrollerPanel extends JPanel {
 */
    /**
     * Display settings have changed; check for new FPS.
+    * @param event
     */
    @Subscribe
    public void onNewDisplaySettings(NewDisplaySettingsEvent event) {
@@ -438,6 +429,7 @@ public class ScrollerPanel extends JPanel {
    /**
     * A new image has arrived; update our scrollbar maxima and positions. Add
     * new scrollbars as needed.
+    * @param event
     */
    @Subscribe
    public void onNewImage(NewImageEvent event) {

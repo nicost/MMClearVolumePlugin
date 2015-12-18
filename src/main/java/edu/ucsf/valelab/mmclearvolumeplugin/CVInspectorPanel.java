@@ -18,6 +18,7 @@ package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
 import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollBarAnimateIcon;
+import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollerPanel;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.awt.event.AdjustmentEvent;
@@ -203,6 +204,7 @@ public final class CVInspectorPanel extends InspectorPanel {
       zSlider_ = makeSlider(ZAXIS);
       add(zSlider_, "wrap");
       
+      /*
       timeSliderPanel_ = new JPanel(new MigLayout("flowx"));
       ScrollBarAnimateIcon sbaIcon= new ScrollBarAnimateIcon("t", this);
       timeSliderPanel_.add(sbaIcon);
@@ -211,6 +213,10 @@ public final class CVInspectorPanel extends InspectorPanel {
               timeAxisScrollBar_.getPreferredSize().height));
       timeSliderPanel_.add(timeAxisScrollBar_, "growx");
       add(timeSliderPanel_, "span x 4, growx, wrap");
+              */
+      
+      ScrollerPanel sp = new ScrollerPanel(viewer_.getDatastore(), viewer_);
+      add(sp, "span x 4, growx, wrap");
       
    }
    
