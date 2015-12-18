@@ -1,5 +1,3 @@
-
-
 ///////////////////////////////////////////////////////////////////////////////
 //PROJECT:       Micro-Manager
 //SUBSYSTEM:     Display implementation
@@ -27,7 +25,7 @@ import java.awt.Component;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseEvent;
-import java.util.Hashtable;
+import java.util.Hashtable; // needed because of JSlider
 
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeEvent;
@@ -53,6 +51,9 @@ public class FPSPopupMenu extends JPopupMenu {
    private class FPSSlider extends JSlider implements MenuElement {
       public FPSSlider() {
          super(1, 100);
+      }
+      
+      public void initialize() {
          setBorder(new TitledBorder("Animation FPS"));
          setMajorTickSpacing(20);
          // Set up custom labels, because otherwise we end up with ticks at
@@ -94,6 +95,7 @@ public class FPSPopupMenu extends JPopupMenu {
 
    public FPSPopupMenu(final DisplayWindow display, int initialVal) {
       final FPSSlider slider = new FPSSlider();
+      slider.initialize();
       final JTextField field = new JTextField(3);
       slider.setValue(initialVal);
       slider.addChangeListener((ChangeEvent event) -> {

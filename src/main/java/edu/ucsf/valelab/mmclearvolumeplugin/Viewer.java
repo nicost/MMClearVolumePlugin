@@ -22,6 +22,7 @@ import com.google.common.eventbus.EventBus;
 import com.jogamp.newt.awt.NewtCanvasAWT;
 import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
+import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 import ij.ImagePlus;
 import ij.gui.ImageWindow;
 import java.awt.BorderLayout;
@@ -51,6 +52,7 @@ import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.NewDisplaySettingsEvent;
+
 import org.micromanager.display.internal.events.DefaultDisplayAboutToShowEvent;
 import org.micromanager.events.internal.DefaultEventManager;
 
@@ -267,7 +269,8 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public void setDisplayedImageTo(Coords coords) {
-      // System.out.println("setDisplayedImageTo called and ignored");
+       drawVolume(coords.getTime());
+       displayBus_.post(new CanvasDrawCompleteEvent());
    }
 
    @Override

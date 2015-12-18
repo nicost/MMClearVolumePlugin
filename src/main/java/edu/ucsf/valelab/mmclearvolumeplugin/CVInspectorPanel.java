@@ -47,8 +47,9 @@ public final class CVInspectorPanel extends InspectorPanel {
    static public final int ZAXIS = 2;
    
    private RangeSlider xSlider_, ySlider_, zSlider_;
-   private JScrollBar timeAxisScrollBar_;
-   private JPanel timeSliderPanel_;
+   // private JScrollBar timeAxisScrollBar_;
+   private ScrollerPanel sp_;
+   //private JPanel timeSliderPanel_;
    private boolean animating_ = false;
    
    public CVInspectorPanel() {
@@ -89,6 +90,7 @@ public final class CVInspectorPanel extends InspectorPanel {
       if (viewer_.getDatastore().getAxisLength(Coords.TIME) > 1) {
          int tp = viewer_.getDisplayedImages().get(0).getCoords().getTime();
          int max = viewer_.getDatastore().getAxisLength(Coords.TIME) - 1;
+         /*
          timeAxisScrollBar_.setValues(tp, 1, 0, max);
          timeAxisScrollBar_.setSize(new Dimension(SLIDERPIXELWIDTH,
               timeAxisScrollBar_.getPreferredSize().height));
@@ -98,9 +100,15 @@ public final class CVInspectorPanel extends InspectorPanel {
          timeAxisScrollBar_.addAdjustmentListener((AdjustmentEvent e) -> {
             viewer_.drawVolume(timeAxisScrollBar_.getValue());
          });
-         timeSliderPanel_.setVisible(true);
+         */
+         if (sp_ != null) {
+             this.remove(sp_);
+         }
+         sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_, this);
+         add(sp_, "span x 4, growx, wrap");
+         //timeSliderPanel_.setVisible(true);
       } else {
-         timeSliderPanel_.setVisible(false);
+         //timeSliderPanel_.setVisible(false);
       }
       viewer_.updateHistograms();
    }
@@ -214,10 +222,11 @@ public final class CVInspectorPanel extends InspectorPanel {
       timeSliderPanel_.add(timeAxisScrollBar_, "growx");
       add(timeSliderPanel_, "span x 4, growx, wrap");
               */
-      
-      ScrollerPanel sp = new ScrollerPanel(viewer_.getDatastore(), viewer_);
-      add(sp, "span x 4, growx, wrap");
-      
+       if (viewer_ != null) {
+           sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_, this);
+           add(sp_, "span x 4, growx, wrap");
+       }
+
    }
    
    public void toggleAnimation() {

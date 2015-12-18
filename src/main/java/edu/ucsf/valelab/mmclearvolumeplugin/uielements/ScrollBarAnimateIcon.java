@@ -22,7 +22,6 @@ package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 
 
 import com.bulenkov.iconloader.IconLoader;
-import edu.ucsf.valelab.mmclearvolumeplugin.CVInspectorPanel;
 
 import java.awt.Color;
 import java.awt.Dimension;
@@ -60,7 +59,7 @@ public class ScrollBarAnimateIcon extends JButton {
     * @param axis
     * @param parent
     */
-   public ScrollBarAnimateIcon(final String axis, CVInspectorPanel parent) {
+   public ScrollBarAnimateIcon(final String axis, final ScrollerPanel parent) {
       super();
       curIcon_ = PLAY_ICON;
       setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
@@ -71,7 +70,7 @@ public class ScrollBarAnimateIcon extends JButton {
       addMouseListener(new MouseInputAdapter() {
          @Override
          public void mousePressed(MouseEvent e) {
-            parent.toggleAnimation();
+            parent.toggleAnimation(axis);
             setIsAnimated(!isAnimated_);
          }
       });

@@ -1,5 +1,4 @@
 
-package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 
 ///////////////////////////////////////////////////////////////////////////////
 //PROJECT:       Micro-Manager
@@ -21,8 +20,11 @@ package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 //               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
 
+package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 
 import com.google.common.eventbus.Subscribe;
+import edu.ucsf.valelab.mmclearvolumeplugin.CVInspectorPanel;
+import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -55,19 +57,7 @@ import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.NewDisplaySettingsEvent;
 
-//import org.micromanager.data.internal.DefaultCoords;
-
-//import org.micromanager.display.internal.events.CanvasDrawCompleteEvent;
-//import org.micromanager.display.internal.events.LayoutChangedEvent;
-//import org.micromanager.display.internal.link.ImageCoordsEvent;
-
-//import org.micromanager.display.PixelsSetEvent;
-//import org.micromanager.display.internal.FPSPopupMenu;
-//import org.micromanager.display.internal.ScrollbarLockIcon;
-//import org.micromanager.internal.utils.GUIUtils;
-
-//import org.micromanager.internal.utils.ReportingUtils;
-
+import org.micromanager.data.internal.DefaultCoords;
 
 /**
  * This class displays a grid of scrollbars for selecting which images in a
@@ -127,6 +117,7 @@ public class ScrollerPanel extends JPanel {
 
    private final Datastore store_;
    private final DisplayWindow display_;
+   private final CVInspectorPanel cvIP_;
    private final Thread updateThread_;
    private final LinkedBlockingQueue<Coords> updateQueue_;
    private final AtomicBoolean shouldStopUpdates_;
@@ -147,9 +138,11 @@ public class ScrollerPanel extends JPanel {
    // draw requests.
    private boolean shouldPostEvents_ = true;
 
-   public ScrollerPanel(Datastore store, DisplayWindow display) {
+   public ScrollerPanel(final Datastore store, final DisplayWindow display,
+           final CVInspectorPanel cvIP) {
       store_ = store;
       display_ = display;
+      cvIP_ = cvIP;
 
       updateQueue_ = new LinkedBlockingQueue<>();
       shouldStopUpdates_ = new AtomicBoolean(false);
@@ -212,7 +205,7 @@ public class ScrollerPanel extends JPanel {
     */
    private void addScroller(final String axis) {
       final ScrollBarAnimateIcon animateIcon = new ScrollBarAnimateIcon(
-            axis, null);
+            axis, this);
       add(animateIcon, "grow 0");
 
       // This button displays the current position along the axis, and when
@@ -249,7 +242,7 @@ public class ScrollerPanel extends JPanel {
       scrollbar.addAdjustmentListener((AdjustmentEvent e) -> {
          setPosition(axis, scrollbar.getValue());
       });
-      add(scrollbar, "shrinkx, growx");
+      add(scrollbar, "shrinkx, growx, wrap");
 
       /*
       ScrollbarLockIcon lock = new ScrollbarLockIcon(axis, display_);
@@ -315,7 +308,7 @@ public class ScrollerPanel extends JPanel {
          button.setText(newText);
       }
       if (didChange) {
-         //postDrawEvent();
+         postDrawEvent();
       }
    }
 
@@ -324,7 +317,6 @@ public class ScrollerPanel extends JPanel {
     * TODO: this seems to randomly interfere with animations, when the
     * animated axis is linked.
     */
-   /*
    private void postDrawEvent() {
       if (!shouldPostEvents_) {
          return;
@@ -345,7 +337,6 @@ public class ScrollerPanel extends JPanel {
       //display_.postEvent(new ImageCoordsEvent(target));
       display_.setDisplayedImageTo(target);
    }
-   */
 
    /**
     * One of our lock icons changed state; update lock statuses.
@@ -535,6 +526,17 @@ public class ScrollerPanel extends JPanel {
    }
 
    /**
+    * The canvas has finished drawing an image; move to the next one in our
+    * animation.
+     * @param event
+    */
+   @Subscribe
+   public void onCanvasDrawComplete(CanvasDrawCompleteEvent event) {
+      updateAnimation();
+   }
+   
+   
+   /**
     * Move another step forward in our animation (assuming we are animated).
     */
    private synchronized void updateAnimation() {
@@ -572,13 +574,11 @@ public class ScrollerPanel extends JPanel {
             lastAnimationTimeMs_ = System.currentTimeMillis();
             shouldPostEvents_ = false;
             for (String axis : axisToState_.keySet()) {
-             //  if (axisToState_.get(axis).isAnimated_ &&
-             //        axisToState_.get(axis).lockState_ == ScrollbarLockIcon.LockedState.UNLOCKED) {
-             //     advancePosition(axis, animationStepSize_);
-            //   }
+                if (axisToState_.get(axis).isAnimated_)
+                    advancePosition(axis, animationStepSize_);
             }
             shouldPostEvents_ = true;
-           // postDrawEvent();
+            postDrawEvent();
          }
       };
 
