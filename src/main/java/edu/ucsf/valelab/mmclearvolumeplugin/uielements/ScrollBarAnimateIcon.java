@@ -51,6 +51,8 @@ public class ScrollBarAnimateIcon extends JButton {
          "/org/micromanager/icons/pause.png");
    private static final Font LABEL_FONT = new Font("Arial", Font.PLAIN, 10);
    private final String label_;
+   private final String axis_;
+   private final ScrollerPanel parent_;
    private boolean isAnimated_;
    private Icon curIcon_;
 
@@ -61,16 +63,22 @@ public class ScrollBarAnimateIcon extends JButton {
     */
    public ScrollBarAnimateIcon(final String axis, final ScrollerPanel parent) {
       super();
+      axis_ = axis;
+      parent_ = parent;
       curIcon_ = PLAY_ICON;
-      setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
       // Only use the first letter of the axis.
       label_ = axis.substring(0, 1);
       isAnimated_ = false;
-      setToolTipText("Toggle animation of the " + axis + " axis.");
+     
+   }
+
+   public void initialize() {
+      setSize(BUTTON_WIDTH, BUTTON_HEIGHT);
+      setToolTipText("Toggle animation of the " + axis_ + " axis.");
       addMouseListener(new MouseInputAdapter() {
          @Override
          public void mousePressed(MouseEvent e) {
-            parent.toggleAnimation(axis);
+            parent_.toggleAnimation(axis_);
             setIsAnimated(!isAnimated_);
          }
       });

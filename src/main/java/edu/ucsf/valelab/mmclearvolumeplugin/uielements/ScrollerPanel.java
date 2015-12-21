@@ -1,5 +1,3 @@
-
-
 ///////////////////////////////////////////////////////////////////////////////
 //PROJECT:       Micro-Manager
 //SUBSYSTEM:     Display implementation
@@ -206,6 +204,7 @@ public class ScrollerPanel extends JPanel {
    private void addScroller(final String axis) {
       final ScrollBarAnimateIcon animateIcon = new ScrollBarAnimateIcon(
             axis, this);
+      animateIcon.initialize();
       add(animateIcon, "grow 0");
 
       // This button displays the current position along the axis, and when
