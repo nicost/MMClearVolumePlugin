@@ -53,8 +53,6 @@ import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.NewDisplaySettingsEvent;
 
-import org.micromanager.display.internal.events.DefaultDisplayAboutToShowEvent;
-import org.micromanager.events.internal.DefaultEventManager;
 
 /**
  * Micro-Manager DataViewer that shows 3D stack in the ClearVolume 3D Renderer
@@ -308,8 +306,6 @@ public class Viewer implements DisplayWindow {
     */
    public void updateHistograms() {
       // Needed to initialize the histograms
-      // TODO: check if this can now be removed
-      DefaultEventManager.getInstance().post(new DefaultDisplayAboutToShowEvent(this));
       studio_.displays().updateHistogramDisplays(getDisplayedImages(), this);
    }
 
