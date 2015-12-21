@@ -19,12 +19,17 @@ import clearvolume.renderer.factory.ClearVolumeRendererFactory;
 import clearvolume.transferf.TransferFunction1D;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
+
 import com.jogamp.newt.awt.NewtCanvasAWT;
+
 import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
+
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
+
 import ij.ImagePlus;
 import ij.gui.ImageWindow;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
@@ -41,7 +46,9 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+
 import org.micromanager.Studio;
+import org.micromanager.UserProfile;
 import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
 import org.micromanager.data.Image;
@@ -71,15 +78,23 @@ public class Viewer implements DisplayWindow {
    private Coords.CoordsBuilder coordsBuilder_;
    private boolean open_ = false;
    private int maxValue_;
+   private final String XLOC = "XLocation";
+   private final String YLOC = "YLocation";
+   private final Class<?> ourClass_;
 
    public Viewer(Studio studio) {
+      ourClass_ = this.getClass();
       studio_ = studio;
+      UserProfile profile = studio_.getUserProfile();
       DisplayWindow theDisplay = studio_.displays().getCurrentWindow();
       displayBus_ = new EventBus();
       cvFrame_ = new JFrame();
-      coordsBuilder_ = studio_.data().getCoordsBuilder();
-      if (theDisplay == null) {
-         ij.IJ.error("No data set open");
+      int xLoc = profile.getInt(ourClass_, XLOC, 100);
+      int yLoc = profile.getInt(ourClass_, YLOC, 100);
+       cvFrame_.setLocation(xLoc, yLoc);
+       coordsBuilder_ = studio_.data().getCoordsBuilder();
+       if (theDisplay == null) {
+          ij.IJ.error("No data set open");
          return;
       }
       ds_ = theDisplay.getDisplaySettings().copy().build();
@@ -175,6 +190,9 @@ public class Viewer implements DisplayWindow {
       cvFrame_.addWindowListener(new WindowAdapter() {
          @Override
          public void windowClosing(WindowEvent e) {
+            UserProfile profile = studio_.profile();
+            profile.setInt(ourClass_, XLOC, cvFrame_.getX());
+            profile.setInt(ourClass_, YLOC, cvFrame_.getY());
             clearVolumeRenderer_.close();
             cvFrame_.dispose();
             studio_.getDisplayManager().removeViewer(ourViewer);
