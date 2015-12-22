@@ -127,7 +127,7 @@ public class ScrollerPanel extends JPanel {
 
    private Timer snapbackTimer_;
    private Timer animationTimer_;
-   private int animationFPS_ = 0;
+   private double animationFPS_ = 0.0;
    private int animationStepSize_ = 0;
    private long lastAnimationTimeMs_ = 0;
 
@@ -158,10 +158,10 @@ public class ScrollerPanel extends JPanel {
 
       // Set up the FPS rate prior to calling addScroller(), below, as
       // that method creates the FPS button which needs animationFPS_ to be set
-      Integer fps = display.getDisplaySettings().getAnimationFPS();
+      Double fps = display.getDisplaySettings().getAnimationFPS();
       // Default to 10 if it's not set.
       if (fps == null) {
-         fps = 10;
+         fps = 10.0;
          display.setDisplaySettings(display.getDisplaySettings().copy()
                .animationFPS(fps).build());
       }
@@ -560,7 +560,7 @@ public class ScrollerPanel extends JPanel {
       // by for each animation tick. We cap at an update rate of 30FPS;
       // past that, we step forward by more than one image per step to
       // compensate.
-      int updateFPS = Math.min(30, animationFPS_);
+      int updateFPS = Math.min(30, (int) animationFPS_);
       animationStepSize_ = (int) Math.max(1,
             Math.round(updateFPS * animationFPS_ / 1000.0));
 

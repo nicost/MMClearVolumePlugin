@@ -93,15 +93,15 @@ public class FPSPopupMenu extends JPopupMenu {
       public void menuSelectionChanged(boolean isIncluded) {}
    }
 
-   public FPSPopupMenu(final DisplayWindow display, int initialVal) {
+   public FPSPopupMenu(final DisplayWindow display, double initialVal) {
       final FPSSlider slider = new FPSSlider();
       slider.initialize();
       final JTextField field = new JTextField(3);
-      slider.setValue(initialVal);
+      slider.setValue((int) initialVal);
       slider.addChangeListener((ChangeEvent event) -> {
          field.setText(Integer.toString(slider.getValue()));
          DisplaySettings settings = display.getDisplaySettings();
-         settings = settings.copy().animationFPS(slider.getValue()).build();
+         settings = settings.copy().animationFPS((double) slider.getValue()).build();
          display.setDisplaySettings(settings);
       });
       add(slider);
@@ -114,7 +114,7 @@ public class FPSPopupMenu extends JPopupMenu {
                slider.setValue(newVal);
                slider.repaint();
                DisplaySettings settings = display.getDisplaySettings();
-               settings = settings.copy().animationFPS(newVal).build();
+               settings = settings.copy().animationFPS((double) newVal).build();
                display.setDisplaySettings(settings);
             }
             catch (NumberFormatException e) {
