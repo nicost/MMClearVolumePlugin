@@ -19,6 +19,7 @@ import clearvolume.renderer.factory.ClearVolumeRendererFactory;
 import clearvolume.transferf.TransferFunction1D;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 
 import com.jogamp.newt.awt.NewtCanvasAWT;
 
@@ -52,6 +53,7 @@ import org.micromanager.UserProfile;
 import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
 import org.micromanager.data.Image;
+import org.micromanager.data.NewImageEvent;
 import org.micromanager.data.Metadata;
 import org.micromanager.data.SummaryMetadata;
 import org.micromanager.data.internal.DefaultImage;
@@ -78,6 +80,7 @@ public class Viewer implements DisplayWindow {
    private Coords.CoordsBuilder coordsBuilder_;
    private boolean open_ = false;
    private int maxValue_;
+   private int currentlyShownTimePoint_;
    private final String XLOC = "XLocation";
    private final String YLOC = "YLocation";
    private final Class<?> ourClass_;
@@ -139,7 +142,8 @@ public class Viewer implements DisplayWindow {
 
       maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
 
-      drawVolume(theDisplay.getDisplayedImages().get(0).getCoords().getTime());
+      currentlyShownTimePoint_ = theDisplay.getDisplayedImages().get(0).getCoords().getTime();
+      drawVolume(currentlyShownTimePoint_);
 
       clearVolumeRenderer_.setVisible(true);
       clearVolumeRenderer_.requestDisplay();
@@ -160,7 +164,8 @@ public class Viewer implements DisplayWindow {
          return;
       }
 
-      displayBus_.register(this);    
+      displayBus_.register(this);
+      store_.registerForEvents(this);
       studio_.getDisplayManager().addViewer(this);
 
       // Ensure there are histograms for our display.
@@ -196,6 +201,8 @@ public class Viewer implements DisplayWindow {
             clearVolumeRenderer_.close();
             cvFrame_.dispose();
             studio_.getDisplayManager().removeViewer(ourViewer);
+            displayBus_.unregister(this);
+            store_.unregisterForEvents(this);
             open_ = false;
          }
 
@@ -255,7 +262,6 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public DisplaySettings getDisplaySettings() {
-      // System.out.println("getDisplaySettings called");
       return ds_;
    }
 
@@ -279,10 +285,9 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public Datastore getDatastore() {
-      // System.out.println("getDatastore called");
       return store_;
    }
-
+   
    @Override
    public void setDisplayedImageTo(Coords coords) {
        drawVolume(coords.getTime());
@@ -363,7 +368,9 @@ public class Viewer implements DisplayWindow {
       return lTransfertFunction;
    }
 
-   public final void drawVolume(int timePoint) {
+   public final void drawVolume(final int timePoint) {
+      if (timePoint == currentlyShownTimePoint_)
+         return; // nothing to do, already showing requested timepoint
       // create fragmented memory for each stack that needs sending to CV:
       Image randomImage = store_.getAnyImage();
       final Metadata metadata = randomImage.getMetadata();
@@ -416,6 +423,7 @@ public class Viewer implements DisplayWindow {
          }
          System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
       }
+      currentlyShownTimePoint_ = timePoint;
       clearVolumeRenderer_.setVolumeDataUpdateAllowed(true);
       System.out.println("Start finishing after " + (System.currentTimeMillis() - startTime) + " ms");
       // clearVolumeRenderer_.waitToFinishAllDataBufferCopy(0, TimeUnit.SECONDS);
@@ -619,9 +627,23 @@ public class Viewer implements DisplayWindow {
       return cvFrame_.getOwner();
    }
 
-   @Override
+   @Override 
    public void setCustomTitle(String string) {
       
    }
-
+   
+   @Subscribe
+   public void onNewImage(NewImageEvent event) {
+      Coords coords = event.getCoords();
+      int t = coords.getTime();
+      if (t != currentlyShownTimePoint_) { // we are not yes showing this time point
+         // check if we have all z planes, if so draw the volume
+         Coords zStackCoords = studio_.data().getCoordsBuilder().time(t).build();
+         final int nrImages = store_.getImagesMatching(zStackCoords).size();
+         if (nrImages == store_.getAxisLength(Coords.CHANNEL) * store_.getAxisLength(Coords.Z)) {
+            // we are complete, so now draw the image
+            setDisplayedImageTo(coords);
+         }
+      }
+   }
 }

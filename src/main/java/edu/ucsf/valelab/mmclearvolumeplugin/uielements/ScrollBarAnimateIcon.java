@@ -1,5 +1,3 @@
-package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
-
 ///////////////////////////////////////////////////////////////////////////////
 //PROJECT:       Micro-Manager
 //SUBSYSTEM:     Display implementation
@@ -19,6 +17,8 @@ package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 //               IN NO EVENT SHALL THE COPYRIGHT OWNER OR
 //               CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
 //               INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES.
+
+package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 
 
 import com.bulenkov.iconloader.IconLoader;
