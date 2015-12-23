@@ -86,6 +86,10 @@ public class Viewer implements DisplayWindow {
    private final Class<?> ourClass_;
 
    public Viewer(Studio studio) {
+      // first make sure that our app's icon will not change:
+      // TODO: uncomment this line once we have the latest jars that work with this
+      //System.setProperty("newt.window.icons", "null,null");
+      
       ourClass_ = this.getClass();
       studio_ = studio;
       UserProfile profile = studio_.getUserProfile();
@@ -142,8 +146,11 @@ public class Viewer implements DisplayWindow {
 
       maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
 
-      currentlyShownTimePoint_ = theDisplay.getDisplayedImages().get(0).getCoords().getTime();
-      drawVolume(currentlyShownTimePoint_);
+      // force drawing the volume this first time
+      currentlyShownTimePoint_ = -1;
+      int firstTimePoint = theDisplay.getDisplayedImages().get(0).getCoords().getTime();
+      drawVolume(firstTimePoint);
+      currentlyShownTimePoint_ = firstTimePoint;
 
       clearVolumeRenderer_.setVisible(true);
       clearVolumeRenderer_.requestDisplay();
@@ -412,14 +419,18 @@ public class Viewer implements DisplayWindow {
          // Set various display options:
          Color chColor = ds_.getChannelColors()[ch];
          clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
-         float max = (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0]
-                 / (float) maxValue_;
-         float min = (float) ds_.getChannelContrastSettings()[ch].getContrastMins()[0]
-                 / (float) maxValue_;
-         clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
-         Double[] contrastGammas = ds_.getChannelContrastSettings()[ch].getContrastGammas();
-         if (contrastGammas != null) {
-            clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
+         try {
+            float max = (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0]
+                    / (float) maxValue_;
+            float min = (float) ds_.getChannelContrastSettings()[ch].getContrastMins()[0]
+                    / (float) maxValue_;
+            clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
+            Double[] contrastGammas = ds_.getChannelContrastSettings()[ch].getContrastGammas();
+            if (contrastGammas != null) {
+               clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
+            }
+         } catch (NullPointerException ex) {
+            ex.printStackTrace();
          }
          System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
       }

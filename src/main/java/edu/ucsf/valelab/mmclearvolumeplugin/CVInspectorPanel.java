@@ -104,7 +104,7 @@ public final class CVInspectorPanel extends InspectorPanel {
          if (sp_ != null) {
              this.remove(sp_);
          }
-         sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_, this);
+         sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_);
          add(sp_, "span x 4, growx, wrap");
          //timeSliderPanel_.setVisible(true);
       } else {
@@ -223,7 +223,7 @@ public final class CVInspectorPanel extends InspectorPanel {
       add(timeSliderPanel_, "span x 4, growx, wrap");
               */
        if (viewer_ != null) {
-           sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_, this);
+           sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_);
            add(sp_, "span x 4, growx, wrap");
        }
 

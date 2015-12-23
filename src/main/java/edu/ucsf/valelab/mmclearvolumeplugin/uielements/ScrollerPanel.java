@@ -115,7 +115,6 @@ public class ScrollerPanel extends JPanel {
 
    private final Datastore store_;
    private final DisplayWindow display_;
-   private final CVInspectorPanel cvIP_;
    private final Thread updateThread_;
    private final LinkedBlockingQueue<Coords> updateQueue_;
    private final AtomicBoolean shouldStopUpdates_;
@@ -136,11 +135,9 @@ public class ScrollerPanel extends JPanel {
    // draw requests.
    private boolean shouldPostEvents_ = true;
 
-   public ScrollerPanel(final Datastore store, final DisplayWindow display,
-           final CVInspectorPanel cvIP) {
+   public ScrollerPanel(final Datastore store, final DisplayWindow display) {
       store_ = store;
       display_ = display;
-      cvIP_ = cvIP;
 
       updateQueue_ = new LinkedBlockingQueue<>();
       shouldStopUpdates_ = new AtomicBoolean(false);
