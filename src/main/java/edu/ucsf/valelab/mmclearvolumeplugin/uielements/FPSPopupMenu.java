@@ -50,7 +50,7 @@ public class FPSPopupMenu extends JPopupMenu {
     */
    private class FPSSlider extends JSlider implements MenuElement {
       public FPSSlider() {
-         super(1, 100);
+         super(1, 50);
       }
       
       public void initialize() {
@@ -60,7 +60,7 @@ public class FPSPopupMenu extends JPopupMenu {
          // 21, 41, etc.
          Hashtable<Integer, JLabel> labels = new Hashtable<Integer, JLabel>();
          labels.put(1, new JLabel("1"));
-         for (int i = 20; i < 101; i += 20) {
+         for (int i = 10; i < 51; i += 10) {
             labels.put(i, new JLabel(String.valueOf(i)));
          }
          setLabelTable(labels);
