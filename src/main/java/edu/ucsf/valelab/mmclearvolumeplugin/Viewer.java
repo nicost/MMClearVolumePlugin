@@ -98,10 +98,10 @@ public class Viewer implements DisplayWindow {
       cvFrame_ = new JFrame();
       int xLoc = profile.getInt(ourClass_, XLOC, 100);
       int yLoc = profile.getInt(ourClass_, YLOC, 100);
-       cvFrame_.setLocation(xLoc, yLoc);
-       coordsBuilder_ = studio_.data().getCoordsBuilder();
-       if (theDisplay == null) {
-          ij.IJ.error("No data set open");
+      cvFrame_.setLocation(xLoc, yLoc);
+      coordsBuilder_ = studio_.data().getCoordsBuilder();
+      if (theDisplay == null) {
+         ij.IJ.error("No data set open");
          return;
       }
       ds_ = theDisplay.getDisplaySettings().copy().build();
@@ -297,6 +297,10 @@ public class Viewer implements DisplayWindow {
    
    @Override
    public void setDisplayedImageTo(Coords coords) {
+      // ClearVolume uses commands and keystrokes that work on a given channel
+      // Make sure that the channel that ClearVolume works on is synced with the
+      // Channel slider position in the ClearVolume panel in the Image Inspector
+       clearVolumeRenderer_.setCurrentRenderLayer(coords.getChannel());
        drawVolume(coords.getTime());
        displayBus_.post(new CanvasDrawCompleteEvent());
    }

@@ -17,16 +17,11 @@
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
-import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollBarAnimateIcon;
 import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollerPanel;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
-import java.awt.event.AdjustmentEvent;
-import java.awt.event.AdjustmentListener;
 import javax.swing.JButton;
 import javax.swing.JLabel;
-import javax.swing.JPanel;
-import javax.swing.JScrollBar;
 import javax.swing.event.ChangeEvent;
 import net.miginfocom.swing.MigLayout;
 import org.micromanager.data.Coords;
@@ -212,16 +207,6 @@ public final class CVInspectorPanel extends InspectorPanel {
       zSlider_ = makeSlider(ZAXIS);
       add(zSlider_, "wrap");
       
-      /*
-      timeSliderPanel_ = new JPanel(new MigLayout("flowx"));
-      ScrollBarAnimateIcon sbaIcon= new ScrollBarAnimateIcon("t", this);
-      timeSliderPanel_.add(sbaIcon);
-      timeAxisScrollBar_ = new JScrollBar(JScrollBar.HORIZONTAL, 1, 1, 0, 100);
-      timeAxisScrollBar_.setSize(new Dimension(SLIDERPIXELWIDTH,
-              timeAxisScrollBar_.getPreferredSize().height));
-      timeSliderPanel_.add(timeAxisScrollBar_, "growx");
-      add(timeSliderPanel_, "span x 4, growx, wrap");
-              */
        if (viewer_ != null) {
            sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_);
            add(sp_, "span x 4, growx, wrap");
