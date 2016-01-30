@@ -20,6 +20,7 @@ import clearvolume.transferf.TransferFunction1D;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.jogamp.newt.NewtFactory;
 
 import com.jogamp.newt.awt.NewtCanvasAWT;
 
@@ -87,8 +88,7 @@ public class Viewer implements DisplayWindow {
 
    public Viewer(Studio studio) {
       // first make sure that our app's icon will not change:
-      // TODO: uncomment this line once we have the latest jars that work with this
-      //System.setProperty("newt.window.icons", "null,null");
+      NewtFactory.setWindowIcons(null);
       
       ourClass_ = this.getClass();
       studio_ = studio;
@@ -127,6 +127,7 @@ public class Viewer implements DisplayWindow {
                       nrCh,
                       true);
 
+      
       final NewtCanvasAWT lNCWAWT = clearVolumeRenderer_.getNewtCanvasAWT();
       cvFrame_.setTitle(name_);
       cvFrame_.setLayout(new BorderLayout());
