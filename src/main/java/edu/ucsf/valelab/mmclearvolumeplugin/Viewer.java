@@ -60,10 +60,9 @@ import org.micromanager.data.SummaryMetadata;
 import org.micromanager.data.internal.DefaultImage;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
-import org.micromanager.display.DisplaySettings.ContrastSettings;
-import org.micromanager.display.DisplaySettings.DisplaySettingsBuilder;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.NewDisplaySettingsEvent;
+import org.micromanager.internal.utils.ReportingUtils;
 
 
 /**
@@ -112,6 +111,19 @@ public class Viewer implements DisplayWindow {
       
       ds_ = theDisplay.getDisplaySettings().copy().build();
       store_ = theDisplay.getDatastore();
+      
+      // I have had 3D display fail because of null channel mins and maxes
+      // advice the user and bail out
+      for (DisplaySettings.ContrastSettings channelContrastSetting : 
+              ds_.getChannelContrastSettings()) {
+         if (channelContrastSetting.getContrastMaxes()[0] == null || 
+                 channelContrastSetting.getContrastMins()[0] == null) {
+            ReportingUtils.showError("Display settings are invalid.  \n" + 
+                    "Please adjust min/max sliders and try again");
+            return;
+         }
+      }
+      
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       Image randomImage = store_.getAnyImage();
 
@@ -411,7 +423,7 @@ public class Viewer implements DisplayWindow {
             fragmentedMemory.add(image.getPixelBuffer());
          }
 
-         // pass data to renderer: (this calls takes a long time!)
+         // pass data to renderer: (this call takes a long time!)
          clearVolumeRenderer_.setVolumeDataBuffer(0, 
                  TimeUnit.SECONDS, 
                  ch,
@@ -441,7 +453,7 @@ public class Viewer implements DisplayWindow {
                clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
             }
          } catch (NullPointerException ex) {
-            ex.printStackTrace();
+            ReportingUtils.showError(ex);
          }
          System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
       }
@@ -572,25 +584,6 @@ public class Viewer implements DisplayWindow {
          return clearVolumeRenderer_.getClipBox();
       return null;
    }
-   
-   /**
-    * TODO: finish and use in constructor to avoid null minima and maxima
-    * @param original
-    * @return 
-    */
-   private DisplaySettings copyDisplaySettings(DisplaySettings original) {
-      DisplaySettingsBuilder dsb = original.copy();
-      ContrastSettings[] css = original.getChannelContrastSettings().clone();
-      for (DisplaySettings.ContrastSettings channelContrastSetting : 
-              original.getChannelContrastSettings()) {
-         if (channelContrastSetting.getContrastMaxes()[0] == null) {
-            // do something so that the new display settings will not have null
-            
-         }
-      }
-      return dsb.build();
-   }
-   
    
    // Following functions are included since we need to be a DisplayWindow, not a DataViewer
 
