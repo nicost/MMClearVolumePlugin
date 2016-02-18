@@ -60,6 +60,8 @@ import org.micromanager.data.SummaryMetadata;
 import org.micromanager.data.internal.DefaultImage;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
+import org.micromanager.display.DisplaySettings.ContrastSettings;
+import org.micromanager.display.DisplaySettings.DisplaySettingsBuilder;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.NewDisplaySettingsEvent;
 
@@ -88,6 +90,9 @@ public class Viewer implements DisplayWindow {
 
    public Viewer(Studio studio) {
       // first make sure that our app's icon will not change:
+      // This call still seems to generate a null pointer exception, at 
+      // at jogamp.newt.driver.windows.DisplayDriver.<clinit>(DisplayDriver.java:70)
+      // which is ugly but seems harmless
       NewtFactory.setWindowIcons(null);
       
       ourClass_ = this.getClass();
@@ -104,6 +109,7 @@ public class Viewer implements DisplayWindow {
          ij.IJ.error("No data set open");
          return;
       }
+      
       ds_ = theDisplay.getDisplaySettings().copy().build();
       store_ = theDisplay.getDatastore();
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
@@ -565,6 +571,24 @@ public class Viewer implements DisplayWindow {
       if (clearVolumeRenderer_ != null)
          return clearVolumeRenderer_.getClipBox();
       return null;
+   }
+   
+   /**
+    * TODO: finish and use in constructor to avoid null minima and maxima
+    * @param original
+    * @return 
+    */
+   private DisplaySettings copyDisplaySettings(DisplaySettings original) {
+      DisplaySettingsBuilder dsb = original.copy();
+      ContrastSettings[] css = original.getChannelContrastSettings().clone();
+      for (DisplaySettings.ContrastSettings channelContrastSetting : 
+              original.getChannelContrastSettings()) {
+         if (channelContrastSetting.getContrastMaxes()[0] == null) {
+            // do something so that the new display settings will not have null
+            
+         }
+      }
+      return dsb.build();
    }
    
    
