@@ -21,7 +21,6 @@
 package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 
 import com.google.common.eventbus.Subscribe;
-import edu.ucsf.valelab.mmclearvolumeplugin.CVInspectorPanel;
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 
 import java.awt.Dimension;
@@ -93,7 +92,7 @@ public class ScrollerPanel extends JPanel {
     */
    public class PositionPopup extends JPopupMenu {
       public PositionPopup(final String axis, JButton button) {
-         add(new JLabel("Set index: "));
+         super.add(new JLabel("Set index: "));
          final JTextField field = new JTextField(button.getText());
          field.addKeyListener(new KeyAdapter() {
             @Override
@@ -109,7 +108,7 @@ public class ScrollerPanel extends JPanel {
                }
             }
          });
-         add(field);
+         super.add(field);
       }
    }
 
@@ -148,10 +147,10 @@ public class ScrollerPanel extends JPanel {
       // Only the scrollbar column is allowed to grow in width
       // Columns are animate, current position, max position, scrollbar,
       // lock, link
-      setLayout(new MigLayout("insets 0", 
+      super.setLayout(new MigLayout("insets 0", 
                "[][][][grow, shrink][][]"));
       // Don't prevent other components from shrinking
-      setMinimumSize(new Dimension(1, 1));
+      super.setMinimumSize(new Dimension(1, 1));
 
       // Set up the FPS rate prior to calling addScroller(), below, as
       // that method creates the FPS button which needs animationFPS_ to be set
