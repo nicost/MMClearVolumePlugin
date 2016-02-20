@@ -61,6 +61,7 @@ import org.micromanager.data.internal.DefaultImage;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
+import org.micromanager.display.HistogramData;
 import org.micromanager.display.NewDisplaySettingsEvent;
 import org.micromanager.internal.utils.ReportingUtils;
 
@@ -72,7 +73,7 @@ import org.micromanager.internal.utils.ReportingUtils;
  */
 public class Viewer implements DisplayWindow {
 
-   private DisplaySettings ds_;
+   private DisplaySettings displaySettings_;
    private final Studio studio_;
    private Datastore store_;
    private ClearVolumeRendererInterface clearVolumeRenderer_;
@@ -109,13 +110,13 @@ public class Viewer implements DisplayWindow {
          return;
       }
       
-      ds_ = theDisplay.getDisplaySettings().copy().build();
+      displaySettings_ = theDisplay.getDisplaySettings().copy().build();
       store_ = theDisplay.getDatastore();
       
       // I have had 3D display fail because of null channel mins and maxes
       // advice the user and bail out
       for (DisplaySettings.ContrastSettings channelContrastSetting : 
-              ds_.getChannelContrastSettings()) {
+              displaySettings_.getChannelContrastSettings()) {
          if (channelContrastSetting.getContrastMaxes()[0] == null || 
                  channelContrastSetting.getContrastMins()[0] == null) {
             ReportingUtils.showError("Display settings are invalid.  \n" + 
@@ -249,19 +250,19 @@ public class Viewer implements DisplayWindow {
    public void setDisplaySettings(DisplaySettings ds) {
       
       for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++ ) {
-         if ( !Objects.equals(ds_.getSafeIsVisible(ch, true), 
+         if ( !Objects.equals(displaySettings_.getSafeIsVisible(ch, true), 
                  ds.getSafeIsVisible(ch, true)) ) {
             clearVolumeRenderer_.setLayerVisible(ch, ds.getSafeIsVisible(ch, true) );
          }
-         if (ds_.getChannelColors()[ch] != ds.getChannelColors()[ch]) {
+         if (displaySettings_.getChannelColors()[ch] != ds.getChannelColors()[ch]) {
             Color chColor = ds.getChannelColors()[ch];
             clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
          }
          if (!Objects.equals 
-               (ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0], 
+               (displaySettings_.getChannelContrastSettings()[ch].getContrastMaxes()[0], 
                ds.getChannelContrastSettings()[ch].getContrastMaxes()[0])  ||
              !Objects.equals
-               (ds_.getChannelContrastSettings()[ch].getContrastMins()[0], 
+               (displaySettings_.getChannelContrastSettings()[ch].getContrastMins()[0], 
                ds.getChannelContrastSettings()[ch].getContrastMins()[0]) )  {
             float max = (float) ds.getChannelContrastSettings()[ch].getContrastMaxes()[0] / 
                          (float) maxValue_; 
@@ -272,7 +273,7 @@ public class Viewer implements DisplayWindow {
             clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
          }
          if (!Objects.equals 
-               (ds_.getChannelContrastSettings()[ch].getContrastGammas(), 
+               (displaySettings_.getChannelContrastSettings()[ch].getContrastGammas(), 
                 ds.getChannelContrastSettings()[ch].getContrastGammas()) )  {
             clearVolumeRenderer_.setGamma(ch,
                     ds.getChannelContrastSettings()[ch].getContrastGammas()[0]);
@@ -280,15 +281,15 @@ public class Viewer implements DisplayWindow {
       }
       
       // replace our reference to the display settings with the new one
-      ds_ = ds;
+      displaySettings_ = ds;
       
       // Needed to update the Inspector window
-      displayBus_.post(new NewDisplaySettingsEvent(ds_, this));
+      displayBus_.post(new NewDisplaySettingsEvent(displaySettings_, this));
    }
 
    @Override
    public DisplaySettings getDisplaySettings() {
-      return ds_;
+      return displaySettings_;
    }
 
    @Override
@@ -440,15 +441,15 @@ public class Viewer implements DisplayWindow {
                  metadata.getPixelSizeUm(), summary.getZStepUm());
 
          // Set various display options:
-         Color chColor = ds_.getChannelColors()[ch];
+         Color chColor = displaySettings_.getChannelColors()[ch];
          clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
          try {
-            float max = (float) ds_.getChannelContrastSettings()[ch].getContrastMaxes()[0]
+            float max = (float) displaySettings_.getChannelContrastSettings()[ch].getContrastMaxes()[0]
                     / (float) maxValue_;
-            float min = (float) ds_.getChannelContrastSettings()[ch].getContrastMins()[0]
+            float min = (float) displaySettings_.getChannelContrastSettings()[ch].getContrastMins()[0]
                     / (float) maxValue_;
             clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
-            Double[] contrastGammas = ds_.getChannelContrastSettings()[ch].getContrastGammas();
+            Double[] contrastGammas = displaySettings_.getChannelContrastSettings()[ch].getContrastGammas();
             if (contrastGammas != null) {
                clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
             }
@@ -610,7 +611,37 @@ public class Viewer implements DisplayWindow {
 
    @Override
    public void autostretch() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
+      Coords baseCoords = getDisplayedImages().get(0).getCoords();
+      Double extremaPercentage = displaySettings_.getExtremaPercentage();
+      if (extremaPercentage == null) {
+         extremaPercentage = 0.0;
+      }
+      DisplaySettings.DisplaySettingsBuilder builder = 
+              displaySettings_.copy();
+      for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ++ch) {
+         Image image = store_.getImage(baseCoords.copy().channel(ch).build());
+         if (image != null) {
+            int numComponents = image.getNumComponents();
+            Integer[] mins = new Integer[numComponents];
+            Integer[] maxes = new Integer[numComponents];
+            Double[] gammas = new Double[numComponents];
+            for (int j = 0; j < image.getNumComponents(); ++j) {
+               gammas[j] = displaySettings_.getSafeContrastGamma(ch, j, 1.0);
+               HistogramData data = studio_.displays().calculateHistogram(
+                       getDisplayedImages().get(ch),
+                       0,
+                       8,
+                       store_.getAnyImage().getMetadata().getBitDepth(),
+                       extremaPercentage);
+               mins[j] = data.getMinIgnoringOutliers();
+               maxes[j] = data.getMaxIgnoringOutliers();
+            }
+            builder.safeUpdateContrastSettings(
+                    studio_.displays().getContrastSettings(
+                            mins, maxes, gammas, true), ch);
+         }
+         postEvent(new NewDisplaySettingsEvent(builder.build(), this));
+      }
    }
 
    @Override
