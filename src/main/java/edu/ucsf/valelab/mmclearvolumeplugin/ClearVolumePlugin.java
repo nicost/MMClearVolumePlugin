@@ -84,7 +84,6 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin, InspectorPl
    @Override
    public InspectorPanel createPanel() {
       CVInspectorPanel cvPanel =  new CVInspectorPanel();
-      cvPanel.buildPanelGUI();
       
       return cvPanel;
    }

@@ -47,6 +47,96 @@ public final class CVInspectorPanel extends InspectorPanel {
    
    public CVInspectorPanel() {
       super();
+      
+      // Decorate the panel here and not in the constructor to avoid
+      // calling overridable methods in the constructor
+      super.setLayout(new MigLayout("flowx"));
+      JButton resetButton = new JButton("Reset");
+      resetButton.setToolTipText("Resets rotation, and centers the complete volume");
+      resetButton.addActionListener( (ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().resetRotationTranslation();
+         }
+      });
+      super.add(resetButton, "span 4, split 4");
+      
+      
+      JButton centerButton = new JButton("Center");
+      centerButton.setToolTipText("Moves middle of visible part to the center");
+      centerButton.addActionListener( (ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().center();
+         }
+      });
+      super.add(centerButton, "");
+      
+      JButton straightButton = new JButton("Straighten");
+      straightButton.setToolTipText("Rotates the object back onto the xyz axes");
+      straightButton.addActionListener( (ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().straighten();
+         }
+      });
+      super.add(straightButton, "wrap");
+      
+      JButton showBoxButton = new JButton("Toggle Box");
+      showBoxButton.setToolTipText("Toggle visibility of the wireFrame Box");
+      showBoxButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().toggleWireFrameBox();
+         }
+      });
+      super.add(showBoxButton, "span 4, split 4");
+      
+      JButton parmsButton = new JButton("Toggle Parameters");
+      parmsButton.setToolTipText("Toggle visibility of Parameters");
+      parmsButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().toggleParametersListFrame();
+         }
+      });
+      super.add(parmsButton, "wrap");
+      
+      /*
+      Controls do not seem to do anything....????
+      JButton controlsButton = new JButton("Toggle Controls");
+      controlsButton.setToolTipText("Toggle visibility of Controls");
+      controlsButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            getViewer().toggleControlPanelDisplay();
+         }
+      });
+      add(controlsButton, "wrap");
+      */
+      
+      addLabel("X");
+      xSlider_ = makeSlider(XAXIS);
+      super.add(xSlider_, "");
+      
+      JButton fullSliderRangeButton = new JButton ("Full");
+      fullSliderRangeButton.addActionListener((ActionEvent e) -> {
+         if (getViewer() != null) {
+            xSlider_.setValue(0); xSlider_.setUpperValue(SLIDERRANGE);
+            ySlider_.setValue(0); ySlider_.setUpperValue(SLIDERRANGE);
+            zSlider_.setValue(0); zSlider_.setUpperValue(SLIDERRANGE);
+            // TODO: check that this triggers resetting the Viewer's ClipBox
+         }
+      });
+      super.add(fullSliderRangeButton, "span y 3, wrap");
+      
+      addLabel("Y");
+      ySlider_ = makeSlider(YAXIS);
+      super.add(ySlider_, "wrap");
+      
+      addLabel("Z");
+      zSlider_ = makeSlider(ZAXIS);
+      super.add(zSlider_, "wrap");
+      
+      if (viewer_ != null) {
+         sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_);
+         super.add(sp_, "span x 4, growx, wrap");
+      }
+
    }
    
    @Override
@@ -103,99 +193,7 @@ public final class CVInspectorPanel extends InspectorPanel {
    public Viewer getViewer() {
       return viewer_;
    }
-   
-   public void buildPanelGUI() {
-      // Decorate the panel here and not in the constructor to avoid
-      // calling overridable methods in the constructor
-      setLayout(new MigLayout("flowx"));
-      JButton resetButton = new JButton("Reset");
-      resetButton.setToolTipText("Resets rotation, and centers the complete volume");
-      resetButton.addActionListener( (ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().resetRotationTranslation();
-         }
-      });
-      add(resetButton, "span 4, split 4");
-      
-      
-      JButton centerButton = new JButton("Center");
-      centerButton.setToolTipText("Moves middle of visible part to the center");
-      centerButton.addActionListener( (ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().center();
-         }
-      });
-      add(centerButton, "");
-      
-      JButton straightButton = new JButton("Straighten");
-      straightButton.setToolTipText("Rotates the object back onto the xyz axes");
-      straightButton.addActionListener( (ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().straighten();
-         }
-      });
-      add(straightButton, "wrap");
-      
-      JButton showBoxButton = new JButton("Toggle Box");
-      showBoxButton.setToolTipText("Toggle visibility of the wireFrame Box");
-      showBoxButton.addActionListener((ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().toggleWireFrameBox();
-         }
-      });
-      add(showBoxButton, "span 4, split 4");
-      
-      JButton parmsButton = new JButton("Toggle Parameters");
-      parmsButton.setToolTipText("Toggle visibility of Parameters");
-      parmsButton.addActionListener((ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().toggleParametersListFrame();
-         }
-      });
-      add(parmsButton, "wrap");
-      
-      /*
-      Controls do not seem to do anything....????
-      JButton controlsButton = new JButton("Toggle Controls");
-      controlsButton.setToolTipText("Toggle visibility of Controls");
-      controlsButton.addActionListener((ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().toggleControlPanelDisplay();
-         }
-      });
-      add(controlsButton, "wrap");
-      */
-      
-      addLabel("X");
-      xSlider_ = makeSlider(XAXIS);
-      add(xSlider_, "");
-      
-      JButton fullSliderRangeButton = new JButton ("Full");
-      fullSliderRangeButton.addActionListener((ActionEvent e) -> {
-         if (getViewer() != null) {
-            xSlider_.setValue(0); xSlider_.setUpperValue(SLIDERRANGE);
-            ySlider_.setValue(0); ySlider_.setUpperValue(SLIDERRANGE);
-            zSlider_.setValue(0); zSlider_.setUpperValue(SLIDERRANGE);
-            // TODO: check that this triggers resetting the Viewer's ClipBox
-         }
-      });
-      add(fullSliderRangeButton, "span y 3, wrap");
-      
-      addLabel("Y");
-      ySlider_ = makeSlider(YAXIS);
-      add(ySlider_, "wrap");
-      
-      addLabel("Z");
-      zSlider_ = makeSlider(ZAXIS);
-      add(zSlider_, "wrap");
-      
-       if (viewer_ != null) {
-           sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_);
-           add(sp_, "span x 4, growx, wrap");
-       }
-
-   }
-   
+     
    public void toggleAnimation() {
       animating_ = !animating_;
       toggleAnimation(animating_);
