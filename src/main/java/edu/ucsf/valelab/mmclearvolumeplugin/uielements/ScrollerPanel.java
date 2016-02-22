@@ -155,9 +155,9 @@ public class ScrollerPanel extends JPanel {
       // Set up the FPS rate prior to calling addScroller(), below, as
       // that method creates the FPS button which needs animationFPS_ to be set
       Double fps = display.getDisplaySettings().getAnimationFPS();
-      // Default to 10 if it's not set.
+      // Default to 5 if it's not set.
       if (fps == null) {
-         fps = 10.0;
+         fps = 5.0;
          display.setDisplaySettings(display.getDisplaySettings().copy()
                .animationFPS(fps).build());
       }

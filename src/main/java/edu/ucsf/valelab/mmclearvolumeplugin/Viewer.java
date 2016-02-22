@@ -63,6 +63,7 @@ import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.HistogramData;
 import org.micromanager.display.NewDisplaySettingsEvent;
+import org.micromanager.display.NewHistogramsEvent;
 import org.micromanager.internal.utils.ReportingUtils;
 
 
@@ -269,7 +270,7 @@ public class Viewer implements DisplayWindow {
             float min = (float) ds.getChannelContrastSettings()[ch].getContrastMins()[0] / 
                          (float) maxValue_;
             
-            System.out.println("Max was: " + max);
+            // System.out.println("Max was: " + max);
             clearVolumeRenderer_.setTransferFunctionRange(ch, min, max);
          }
          if (!Objects.equals 
@@ -277,6 +278,18 @@ public class Viewer implements DisplayWindow {
                 ds.getChannelContrastSettings()[ch].getContrastGammas()) )  {
             clearVolumeRenderer_.setGamma(ch,
                     ds.getChannelContrastSettings()[ch].getContrastGammas()[0]);
+         }
+      }
+      
+      // Autostretch if set
+      if (! Objects.equals( ds.getShouldAutostretch(), 
+              displaySettings_.getShouldAutostretch()) || 
+          ! Objects.equals( ds.getExtremaPercentage(), 
+                  displaySettings_.getExtremaPercentage()) ) {
+         if (ds.getShouldAutostretch()) {
+            autostretch();
+            drawVolume(currentlyShownTimePoint_);
+            displayBus_.post(new CanvasDrawCompleteEvent());
          }
       }
       
@@ -400,8 +413,8 @@ public class Viewer implements DisplayWindow {
    }
 
    public final void drawVolume(final int timePoint) {
-      if (timePoint == currentlyShownTimePoint_)
-         return; // nothing to do, already showing requested timepoint
+      //if (timePoint == currentlyShownTimePoint_)
+      //   return; // nothing to do, already showing requested timepoint
       // create fragmented memory for each stack that needs sending to CV:
       Image randomImage = store_.getAnyImage();
       final Metadata metadata = randomImage.getMetadata();
@@ -409,8 +422,10 @@ public class Viewer implements DisplayWindow {
       final int nrZ = store_.getAxisLength(Coords.Z);
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
 
-      long startTime = System.currentTimeMillis();
+      // long startTime = System.currentTimeMillis();
       clearVolumeRenderer_.setVolumeDataUpdateAllowed(false);
+      if (displaySettings_.getShouldAutostretch())
+         autostretch();
       for (int ch = 0; ch < nrCh; ch++) {
          FragmentedMemory fragmentedMemory = new FragmentedMemory();
          for (int i = 0; i < nrZ; i++) {
@@ -456,13 +471,16 @@ public class Viewer implements DisplayWindow {
          } catch (NullPointerException ex) {
             ReportingUtils.showError(ex);
          }
-         System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
+         // System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
       }
       currentlyShownTimePoint_ = timePoint;
       clearVolumeRenderer_.setVolumeDataUpdateAllowed(true);
-      System.out.println("Start finishing after " + (System.currentTimeMillis() - startTime) + " ms");
+      // System.out.println("Start finishing after " + (System.currentTimeMillis() - startTime) + " ms");
+      
+      // We should be waiting here for the renderer to finish, however that call times out!
       // clearVolumeRenderer_.waitToFinishAllDataBufferCopy(0, TimeUnit.SECONDS);
-      System.out.println("Ended finishing after " + (System.currentTimeMillis() - startTime) + " ms");
+      
+      // System.out.println("Ended finishing after " + (System.currentTimeMillis() - startTime) + " ms");
      
    }
 
@@ -500,7 +518,7 @@ public class Viewer implements DisplayWindow {
          float x = clearVolumeRenderer_.getTranslationX();
          float y = clearVolumeRenderer_.getTranslationY();
          float z = clearVolumeRenderer_.getTranslationZ();
-         System.out.println("Rotation now is: " + x + ", " + y + ", " + z);
+         studio_.logs().logMessage("Rotation now is: " + x + ", " + y + ", " + z);
       }
    }
    
@@ -544,12 +562,12 @@ public class Viewer implements DisplayWindow {
       float x = clearVolumeRenderer_.getTranslationX();
       float y = clearVolumeRenderer_.getTranslationY();
       float z = clearVolumeRenderer_.getTranslationZ();
-      System.out.println("Translation now is: " + x + ", " + y + ", " + z);
+      studio_.logs().logMessage("Translation now is: " + x + ", " + y + ", " + z);
       String clipBoxString = "Clipbox: ";
       for (int i = 0; i < 6; i++) {
          clipBoxString += ", " + clearVolumeRenderer_.getClipBox()[i];
       }
-      System.out.println(clipBoxString);
+      studio_.logs().logMessage(clipBoxString);
    }
    
    
@@ -625,23 +643,26 @@ public class Viewer implements DisplayWindow {
             Integer[] mins = new Integer[numComponents];
             Integer[] maxes = new Integer[numComponents];
             Double[] gammas = new Double[numComponents];
+            ArrayList<HistogramData> datas = new ArrayList(image.getNumComponents());
             for (int j = 0; j < image.getNumComponents(); ++j) {
                gammas[j] = displaySettings_.getSafeContrastGamma(ch, j, 1.0);
                HistogramData data = studio_.displays().calculateHistogram(
                        getDisplayedImages().get(ch),
-                       0,
-                       8,
+                       j,
+                       store_.getAnyImage().getMetadata().getBitDepth(),
                        store_.getAnyImage().getMetadata().getBitDepth(),
                        extremaPercentage);
                mins[j] = data.getMinIgnoringOutliers();
                maxes[j] = data.getMaxIgnoringOutliers();
+               datas.add(j, data);
             }
-            builder.safeUpdateContrastSettings(
+            displaySettings_ = builder.safeUpdateContrastSettings(
                     studio_.displays().getContrastSettings(
-                            mins, maxes, gammas, true), ch);
+                            mins, maxes, gammas, true), ch).build();
+            this.postEvent(new NewHistogramsEvent(ch, datas));
          }
-         postEvent(new NewDisplaySettingsEvent(builder.build(), this));
       }
+       postEvent(new NewDisplaySettingsEvent(displaySettings_, this));
    }
 
    @Override

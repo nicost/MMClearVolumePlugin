@@ -50,7 +50,7 @@ public class FPSPopupMenu extends JPopupMenu {
     */
    private class FPSSlider extends JSlider implements MenuElement {
       public FPSSlider() {
-         super(1, 50);
+         super(1, 30);
       }
       
       public void initialize() {
@@ -60,7 +60,7 @@ public class FPSPopupMenu extends JPopupMenu {
          // 21, 41, etc.
          Hashtable<Integer, JLabel> labels = new Hashtable<Integer, JLabel>();
          labels.put(1, new JLabel("1"));
-         for (int i = 10; i < 51; i += 10) {
+         for (int i = 5; i < 31; i += 5) {
             labels.put(i, new JLabel(String.valueOf(i)));
          }
          setLabelTable(labels);
@@ -104,7 +104,7 @@ public class FPSPopupMenu extends JPopupMenu {
          settings = settings.copy().animationFPS((double) slider.getValue()).build();
          display.setDisplaySettings(settings);
       });
-      add(slider);
+      super.add(slider);
 
       field.addKeyListener(new KeyAdapter() {
          @Override
@@ -122,6 +122,6 @@ public class FPSPopupMenu extends JPopupMenu {
             }
          }
       });
-      add(field);
+      super.add(field);
    }
 }
