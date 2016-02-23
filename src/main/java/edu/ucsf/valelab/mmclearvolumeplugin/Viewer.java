@@ -747,7 +747,8 @@ public class Viewer implements DisplayWindow {
          final int nrImages = store_.getImagesMatching(zStackCoords).size();
          */
          Coords intendedDimensions = store_.getSummaryMetadata().getIntendedDimensions();
-         // instead, keep our own counter
+         // instead, keep our own counter, this assumes that all time points arrive in order
+         // TODO: work around this by keeping a list of counters
          imgCounter_++;
          if (imgCounter_ == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
             imgCounter_ = 0;
