@@ -58,13 +58,12 @@ import org.micromanager.data.NewImageEvent;
 import org.micromanager.data.Metadata;
 import org.micromanager.data.SummaryMetadata;
 import org.micromanager.data.internal.DefaultImage;
-import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.HistogramData;
 import org.micromanager.display.NewDisplaySettingsEvent;
 import org.micromanager.display.NewHistogramsEvent;
-import org.micromanager.internal.utils.ReportingUtils;
+
 
 
 /**
@@ -89,7 +88,9 @@ public class Viewer implements DisplayWindow {
    private final String XLOC = "XLocation";
    private final String YLOC = "YLocation";
    private final Class<?> ourClass_;
-   private int imgCounter_ = 0;
+   private int imgCounter_ = 1; // we consistently miss the first image of a time series
+   private final Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.MAGENTA,
+            Color.PINK, Color.CYAN, Color.YELLOW, Color.ORANGE};
 
    public Viewer(Studio studio, DisplayWindow display) {
       // first make sure that our app's icon will not change:
@@ -111,7 +112,9 @@ public class Viewer implements DisplayWindow {
       int yLoc = profile.getInt(ourClass_, YLOC, 100);
       cvFrame_.setLocation(xLoc, yLoc);
       coordsBuilder_ = studio_.data().getCoordsBuilder();
-      // check is only here since a number of variable could not be final otherwise
+      
+      // check for existing display. Is only here and not above since 
+      // a number of variables can not be final otherwise
       if (clonedDisplay_ == null) {
          ij.IJ.error("No data set open");
          return;
@@ -144,11 +147,12 @@ public class Viewer implements DisplayWindow {
               displaySettings_.getChannelContrastSettings()) {
          if (channelContrastSetting.getContrastMaxes()[0] == null || 
                  channelContrastSetting.getContrastMins()[0] == null) {
-            ReportingUtils.showError("Display settings are invalid.  \n" + 
+            studio_.logs().showError("Display settings are invalid.  \n" + 
                     "Please adjust min/max sliders and try again");
             return;
          }
       }
+      
       
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       Image randomImage = store_.getAnyImage();
@@ -157,7 +161,7 @@ public class Viewer implements DisplayWindow {
       if (randomImage.getBytesPerPixel() == 1) {
          nte = NativeTypeEnum.UnsignedByte;
       }
-
+      
       clearVolumeRenderer_
               = ClearVolumeRendererFactory.newOpenCLRenderer(
                       name_,
@@ -171,6 +175,7 @@ public class Viewer implements DisplayWindow {
 
       
       final NewtCanvasAWT lNCWAWT = clearVolumeRenderer_.getNewtCanvasAWT();
+
       cvFrame_.setTitle(name_);
       cvFrame_.setLayout(new BorderLayout());
       final Container container = new Container();
@@ -186,10 +191,11 @@ public class Viewer implements DisplayWindow {
 
       clearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
 
-
       maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
-
+             
       drawVolume(timePoint);
+      displayBus_.post(new CanvasDrawCompleteEvent());
+      
       currentlyShownTimePoint_ = timePoint;
 
       clearVolumeRenderer_.setVisible(true);
@@ -197,6 +203,7 @@ public class Viewer implements DisplayWindow {
       clearVolumeRenderer_.toggleControlPanelDisplay();
       cvFrame_.pack();
       studio_.getDisplayManager().raisedToTop(this);
+
       open_ = true;
    }
 
@@ -214,13 +221,14 @@ public class Viewer implements DisplayWindow {
       displayBus_.register(this);
       store_.registerForEvents(this);
       studio_.getDisplayManager().addViewer(this);
-
+                  
       // Ensure there are histograms for our display.
-      updateHistograms();
+      if (open_)
+         updateHistograms();
 
       
       // used to reference our instance within the listeners:
-      final DataViewer ourViewer = this;
+      final Viewer ourViewer = this;
 
       // the WindowFocusListener should go into the WindowAdapter, but there it
       // does not work, so add both a WindowListener and WindowFocusListener
@@ -248,8 +256,8 @@ public class Viewer implements DisplayWindow {
             clearVolumeRenderer_.close();
             cvFrame_.dispose();
             studio_.getDisplayManager().removeViewer(ourViewer);
-            displayBus_.unregister(this);
-            store_.unregisterForEvents(this);
+            displayBus_.unregister(ourViewer);
+            store_.unregisterForEvents(ourViewer);
             open_ = false;
          }
 
@@ -455,9 +463,18 @@ public class Viewer implements DisplayWindow {
             DefaultImage image = (DefaultImage) store_.getImage(coords);
 
             // add the contiguous memory as fragment:
-            fragmentedMemory.add(image.getPixelBuffer());
+            if (image != null)
+               fragmentedMemory.add(image.getPixelBuffer());
          }
 
+         // TODO: correct x and y voxel sizes using aspect ratio
+         double pixelSizeUm = metadata.getPixelSizeUm();
+         if (pixelSizeUm == 0.0)
+            pixelSizeUm = 1.0;
+         double stepSizeUm = summary.getZStepUm();
+         if (stepSizeUm == 0.0)
+            stepSizeUm = 1.0;
+         
          // pass data to renderer: (this call takes a long time!)
          clearVolumeRenderer_.setVolumeDataBuffer(0, 
                  TimeUnit.SECONDS, 
@@ -466,16 +483,23 @@ public class Viewer implements DisplayWindow {
                  randomImage.getWidth(),
                  randomImage.getHeight(),
                  nrZ, 
-                 metadata.getPixelSizeUm(),
-                 metadata.getPixelSizeUm(), 
-                 summary.getZStepUm());
+                 pixelSizeUm,
+                 pixelSizeUm, 
+                 stepSizeUm);
 
-         // TODO: correct x and y voxel sizes using aspect ratio
-         clearVolumeRenderer_.setVoxelSize(ch, metadata.getPixelSizeUm(),
-                 metadata.getPixelSizeUm(), summary.getZStepUm());
+
+         //clearVolumeRenderer_.setVoxelSize(ch, pixelSizeUm,
+         //        pixelSizeUm, stepSizeUm);
 
          // Set various display options:
+         // HACK: on occassion we get null colors, correct that problem here
          Color chColor = displaySettings_.getChannelColors()[ch];
+         if (chColor == null) {
+            chColor = colors[ch];
+            Color[] chColors = displaySettings_.getChannelColors();
+            chColors[ch] = chColor;
+            displaySettings_ = displaySettings_.copy().channelColors(chColors).build();
+         }
          clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
          try {
             float max = (float) displaySettings_.getChannelContrastSettings()[ch].getContrastMaxes()[0]
@@ -488,7 +512,7 @@ public class Viewer implements DisplayWindow {
                clearVolumeRenderer_.setGamma(ch, contrastGammas[0]);
             }
          } catch (NullPointerException ex) {
-            ReportingUtils.showError(ex);
+            studio_.logs().showError(ex);
          }
          // System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
       }
@@ -751,13 +775,13 @@ public class Viewer implements DisplayWindow {
          // TODO: work around this by keeping a list of counters
          imgCounter_++;
          if (imgCounter_ == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
-            imgCounter_ = 0;
             if (!open_) {
-               initializeRenderer(t);
+               initializeRenderer(0);
             } else {
                // we are complete, so now draw the image
                setDisplayedImageTo(coords);
             }
+            imgCounter_ = 0;
          }
       }
    }

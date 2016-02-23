@@ -17,8 +17,10 @@
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import com.google.common.eventbus.Subscribe;
+
 import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
 import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollerPanel;
+
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -28,7 +30,9 @@ import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
+
 import net.miginfocom.swing.MigLayout;
+
 import org.micromanager.Studio;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.InspectorPanel;
@@ -73,7 +77,7 @@ public final class CVInspectorPanel extends InspectorPanel {
       });
       super.add(attachToNewCheckBox, "span 4, wrap");
       
-      super.add(new JSeparator(SwingConstants.HORIZONTAL), "span 4, wrap");
+      super.add(new JSeparator(SwingConstants.HORIZONTAL), "span 4, growx, pushx, wrap");
            
       JButton resetButton = new JButton("Reset");
       resetButton.setToolTipText("Resets rotation, and centers the complete volume");
@@ -157,7 +161,7 @@ public final class CVInspectorPanel extends InspectorPanel {
       super.add(zSlider_, "wrap");
       
       if (viewer_ != null) {
-         sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_);
+         sp_ = new ScrollerPanel(studio_, viewer_.getDatastore(), viewer_);
          super.add(sp_, "span x 4, growx, wrap");
       }
 
@@ -198,9 +202,10 @@ public final class CVInspectorPanel extends InspectorPanel {
       if (viewer_.getDatastore().getSummaryMetadata().getIntendedDimensions().
               getTime() > 1) {
          if (sp_ != null) {
-             this.remove(sp_);
+            sp_.stopUpdateThread();
+            this.remove(sp_);
          }
-         sp_ = new ScrollerPanel(viewer_.getDatastore(), viewer_);
+         sp_ = new ScrollerPanel(studio_, viewer_.getDatastore(), viewer_);
          add(sp_, "span x 4, growx, wrap");
       } 
       viewer_.updateHistograms();
@@ -255,7 +260,7 @@ public final class CVInspectorPanel extends InspectorPanel {
     
    @Subscribe
    public void onDisplayAboutToShow(DisplayAboutToShowEvent event) {
-      if (attachToNew_.get()) {
+      if (attachToNew_.get() ) {
          try {
             Viewer viewer = new Viewer(studio_, event.getDisplay());
             viewer.register();
