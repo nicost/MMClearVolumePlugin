@@ -55,6 +55,7 @@ import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.NewDisplaySettingsEvent;
 
 import org.micromanager.data.internal.DefaultCoords;
+import org.micromanager.display.DisplayDestroyedEvent;
 
 /**
  * This class displays a grid of scrollbars for selecting which images in a
@@ -357,6 +358,13 @@ public class ScrollerPanel extends JPanel {
          animationFPS_ = settings.getAnimationFPS();
          fpsButton_.setText("FPS: " + animationFPS_);
          updateAnimation();
+      }
+   }
+   
+   @Subscribe
+   public void onDisplayDestroyed(DisplayDestroyedEvent dde) {
+      if (dde.getDisplay().equals(display_)) {
+         shouldStopUpdates_.set(true);
       }
    }
 
