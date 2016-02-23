@@ -31,6 +31,8 @@ public class RangeSlider extends JSlider {
     /**
      * Constructs a RangeSlider with the specified default minimum and maximum 
      * values.
+    * @param min minimum value of the new RangeSlider
+    * @param max maximum value of the new RangeSlider
      */
     public RangeSlider(int min, int max) {
         super(min, max);
@@ -58,6 +60,7 @@ public class RangeSlider extends JSlider {
 
     /**
      * Returns the lower value in the range.
+    * @return lower value in the range
      */
     @Override
     public int getValue() {
@@ -66,6 +69,7 @@ public class RangeSlider extends JSlider {
 
     /**
      * Sets the lower value in the range.
+    * @param value The new lower value in the range
      */
     @Override
     public void setValue(int value) {
@@ -86,6 +90,7 @@ public class RangeSlider extends JSlider {
 
     /**
      * Returns the upper value in the range.
+    * @return Upper value in the range
      */
     public int getUpperValue() {
         return getValue() + getExtent();
@@ -93,6 +98,7 @@ public class RangeSlider extends JSlider {
 
     /**
      * Sets the upper value in the range.
+    * @param value New upper value in the range
      */
     public void setUpperValue(int value) {
         // Compute new extent.
