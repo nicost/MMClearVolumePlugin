@@ -77,6 +77,7 @@ public class Viewer implements DisplayWindow {
    private DisplaySettings displaySettings_;
    private final Studio studio_;
    private Datastore store_;
+   private final DisplayWindow clonedDisplay_;
    private ClearVolumeRendererInterface clearVolumeRenderer_;
    private String name_;
    private final EventBus displayBus_;
@@ -88,8 +89,9 @@ public class Viewer implements DisplayWindow {
    private final String XLOC = "XLocation";
    private final String YLOC = "YLocation";
    private final Class<?> ourClass_;
+   private int imgCounter_ = 0;
 
-   public Viewer(Studio studio) {
+   public Viewer(Studio studio, DisplayWindow display) {
       // first make sure that our app's icon will not change:
       // This call still seems to generate a null pointer exception, at 
       // at jogamp.newt.driver.windows.DisplayDriver.<clinit>(DisplayDriver.java:70)
@@ -99,21 +101,43 @@ public class Viewer implements DisplayWindow {
       ourClass_ = this.getClass();
       studio_ = studio;
       UserProfile profile = studio_.getUserProfile();
-      DisplayWindow theDisplay = studio_.displays().getCurrentWindow();
+      if (display == null) 
+         clonedDisplay_ = studio_.displays().getCurrentWindow();
+      else 
+         clonedDisplay_ = display;
       displayBus_ = new EventBus();
       cvFrame_ = new JFrame();
       int xLoc = profile.getInt(ourClass_, XLOC, 100);
       int yLoc = profile.getInt(ourClass_, YLOC, 100);
       cvFrame_.setLocation(xLoc, yLoc);
       coordsBuilder_ = studio_.data().getCoordsBuilder();
-      if (theDisplay == null) {
+      // check is only here since a number of variable could not be final otherwise
+      if (clonedDisplay_ == null) {
          ij.IJ.error("No data set open");
          return;
       }
-      
-      displaySettings_ = theDisplay.getDisplaySettings().copy().build();
-      store_ = theDisplay.getDatastore();
-      
+      store_ = clonedDisplay_.getDatastore();
+      name_ = clonedDisplay_.getName() + "-ClearVolume";
+
+      // check if we have all z slices in the first time point
+      // if not, rely on the onNewImage function to initialize the renderer
+      Coords zStackCoords = studio_.data().getCoordsBuilder().time(0).build();
+      final int nrImages = store_.getImagesMatching(zStackCoords).size();
+      currentlyShownTimePoint_ = -1; // set to make sure the first volume will be drawn
+      Coords intendedDimensions = store_.getSummaryMetadata().getIntendedDimensions();
+      if (nrImages == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
+      //if (nrImages == store_.getAxisLength(Coords.CHANNEL) * store_.getAxisLength(Coords.Z)) {
+         int firstTimePoint = clonedDisplay_.getDisplayedImages().get(0).getCoords().getTime();
+         initializeRenderer(firstTimePoint);
+      }
+
+
+   }
+   
+   private void initializeRenderer(int timePoint) {
+       
+      displaySettings_ = clonedDisplay_.getDisplaySettings().copy().build();
+
       // I have had 3D display fail because of null channel mins and maxes
       // advice the user and bail out
       for (DisplaySettings.ContrastSettings channelContrastSetting : 
@@ -128,13 +152,11 @@ public class Viewer implements DisplayWindow {
       
       final int nrCh = store_.getAxisLength(Coords.CHANNEL);
       Image randomImage = store_.getAnyImage();
-
-      // creates renderer:
+            // creates renderer:
       NativeTypeEnum nte = NativeTypeEnum.UnsignedShort;
       if (randomImage.getBytesPerPixel() == 1) {
          nte = NativeTypeEnum.UnsignedByte;
       }
-      name_ = theDisplay.getName() + "-ClearVolume";
 
       clearVolumeRenderer_
               = ClearVolumeRendererFactory.newOpenCLRenderer(
@@ -167,18 +189,15 @@ public class Viewer implements DisplayWindow {
 
       maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
 
-      // force drawing the volume this first time
-      currentlyShownTimePoint_ = -1;
-      int firstTimePoint = theDisplay.getDisplayedImages().get(0).getCoords().getTime();
-      drawVolume(firstTimePoint);
-      currentlyShownTimePoint_ = firstTimePoint;
+      drawVolume(timePoint);
+      currentlyShownTimePoint_ = timePoint;
 
       clearVolumeRenderer_.setVisible(true);
       clearVolumeRenderer_.requestDisplay();
       clearVolumeRenderer_.toggleControlPanelDisplay();
       cvFrame_.pack();
+      studio_.getDisplayManager().raisedToTop(this);
       open_ = true;
-
    }
 
    /**
@@ -188,9 +207,9 @@ public class Viewer implements DisplayWindow {
     * after the constructor.
     */
    public void register() {
-      if (!open_) {
-         return;
-      }
+     // if (!open_) {
+      //   return;
+      //}
 
       displayBus_.register(this);
       store_.registerForEvents(this);
@@ -199,7 +218,7 @@ public class Viewer implements DisplayWindow {
       // Ensure there are histograms for our display.
       updateHistograms();
 
-      studio_.getDisplayManager().raisedToTop(this);
+      
       // used to reference our instance within the listeners:
       final DataViewer ourViewer = this;
 
@@ -723,11 +742,21 @@ public class Viewer implements DisplayWindow {
       int t = coords.getTime();
       if (t != currentlyShownTimePoint_) { // we are not yes showing this time point
          // check if we have all z planes, if so draw the volume
+         /** The following code is exact, but very slow
          Coords zStackCoords = studio_.data().getCoordsBuilder().time(t).build();
          final int nrImages = store_.getImagesMatching(zStackCoords).size();
-         if (nrImages == store_.getAxisLength(Coords.CHANNEL) * store_.getAxisLength(Coords.Z)) {
-            // we are complete, so now draw the image
-            setDisplayedImageTo(coords);
+         */
+         Coords intendedDimensions = store_.getSummaryMetadata().getIntendedDimensions();
+         // instead, keep our own counter
+         imgCounter_++;
+         if (imgCounter_ == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
+            imgCounter_ = 0;
+            if (!open_) {
+               initializeRenderer(t);
+            } else {
+               // we are complete, so now draw the image
+               setDisplayedImageTo(coords);
+            }
          }
       }
    }

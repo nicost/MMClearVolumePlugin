@@ -16,17 +16,23 @@
 
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
+import com.google.common.eventbus.Subscribe;
 import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
 import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollerPanel;
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JLabel;
+import javax.swing.JSeparator;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import net.miginfocom.swing.MigLayout;
-import org.micromanager.data.Coords;
+import org.micromanager.Studio;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.InspectorPanel;
+import org.micromanager.events.DisplayAboutToShowEvent;
 
 /**
  *
@@ -41,16 +47,34 @@ public final class CVInspectorPanel extends InspectorPanel {
    static public final int YAXIS = 1;
    static public final int ZAXIS = 2;
    
+   private final String USE_FOR_ALL = "Use for all";
+   
+   private final Studio studio_;
    private RangeSlider xSlider_, ySlider_, zSlider_;
    private ScrollerPanel sp_;
    private boolean animating_ = false;
+   private final AtomicBoolean attachToNew_ = new AtomicBoolean(false);
    
-   public CVInspectorPanel() {
+   public CVInspectorPanel(Studio studio) {
       super();
       
-      // Decorate the panel here and not in the constructor to avoid
-      // calling overridable methods in the constructor
+      studio_ = studio;
       super.setLayout(new MigLayout("flowx"));
+      
+      final JCheckBox attachToNewCheckBox = new JCheckBox ("Use for all");
+      attachToNewCheckBox.setToolTipText("Open all new data in ClearVolume");
+      attachToNew_.set(studio.profile().getBoolean(this.getClass(), 
+              USE_FOR_ALL, false));
+      attachToNewCheckBox.setSelected(attachToNew_.get());
+      attachToNewCheckBox.addActionListener((ActionEvent e) -> {
+         attachToNew_.set(attachToNewCheckBox.isSelected());
+         studio.profile().setBoolean(this.getClass(), USE_FOR_ALL, 
+                 attachToNewCheckBox.isSelected());
+      });
+      super.add(attachToNewCheckBox, "span 4, wrap");
+      
+      super.add(new JSeparator(SwingConstants.HORIZONTAL), "span 4, wrap");
+           
       JButton resetButton = new JButton("Reset");
       resetButton.setToolTipText("Resets rotation, and centers the complete volume");
       resetButton.addActionListener( (ActionEvent e) -> {
@@ -137,6 +161,7 @@ public final class CVInspectorPanel extends InspectorPanel {
          super.add(sp_, "span x 4, growx, wrap");
       }
 
+      studio.events().registerForEvents(this);
    }
    
    @Override
@@ -170,7 +195,8 @@ public final class CVInspectorPanel extends InspectorPanel {
          zSlider_.setValue(clipValToSliderVal(clipBox[4]));
          zSlider_.setUpperValue(clipValToSliderVal(clipBox[5]));
       }
-      if (viewer_.getDatastore().getAxisLength(Coords.TIME) > 1) {
+      if (viewer_.getDatastore().getSummaryMetadata().getIntendedDimensions().
+              getTime() > 1) {
          if (sp_ != null) {
              this.remove(sp_);
          }
@@ -226,4 +252,18 @@ public final class CVInspectorPanel extends InspectorPanel {
       add(label, "");
     }
     
+    
+   @Subscribe
+   public void onDisplayAboutToShow(DisplayAboutToShowEvent event) {
+      if (attachToNew_.get()) {
+         try {
+            Viewer viewer = new Viewer(studio_, event.getDisplay());
+            viewer.register();
+         } catch (Exception ex) {
+            ex.printStackTrace();
+         }
+
+      }
+   }
+
 }
