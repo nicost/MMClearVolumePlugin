@@ -175,11 +175,30 @@ public class CVViewer implements DisplayWindow {
                     getContrastSettings(0, maxValue_, 1.0, true);
          }
       } else {
-         for (DisplaySettings.ContrastSettings css : contrastSettings) {
-            if (css.getContrastMaxes()[0] == null
-                    || css.getContrastMins()[0] == null) {
-               css = studio_.displays().
+         for (int ch = 0; ch < contrastSettings.length; ch++) {
+            if (contrastSettings[ch] == null || 
+                    contrastSettings[ch].getContrastMaxes() == null || 
+                    contrastSettings[ch].getContrastMaxes()[0] == null ||
+                    contrastSettings[ch].getContrastMaxes()[0] == 0 ||
+                    contrastSettings[ch].getContrastMins() == null ||
+                    contrastSettings[ch].getContrastMins()[0] == null) {
+               contrastSettings[ch] = studio_.displays().
                        getContrastSettings(0, maxValue_, 1.0, true);
+            }
+            if (contrastSettings[ch].getContrastGammas() == null || 
+                    contrastSettings[ch].getContrastGammas()[0] == null) {
+               contrastSettings[ch] = studio_.displays().getContrastSettings(
+                       contrastSettings[ch].getContrastMins()[0],
+                       contrastSettings[ch].getContrastMaxes()[0], 
+                       1.0, 
+                       contrastSettings[ch].getIsVisible());
+            }
+            if (contrastSettings[ch].getIsVisible() == null) {
+               contrastSettings[ch] = studio_.displays().getContrastSettings(
+                       contrastSettings[ch].getContrastMins()[0],
+                       contrastSettings[ch].getContrastMaxes()[0],
+                       contrastSettings[ch].getContrastGammas()[0], 
+                       true);
             }
          }
       }
