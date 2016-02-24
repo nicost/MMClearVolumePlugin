@@ -89,7 +89,7 @@ public class CVViewer implements DisplayWindow {
    private final String XLOC = "XLocation";
    private final String YLOC = "YLocation";
    private final Class<?> ourClass_;
-   private int imgCounter_ = 1; // we consistently miss the first image of a time series
+   private int imgCounter_ = 0;
    private final Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.MAGENTA,
             Color.PINK, Color.CYAN, Color.YELLOW, Color.ORANGE};
    
@@ -113,15 +113,10 @@ public class CVViewer implements DisplayWindow {
          name_ = clonedDisplay_.getName() + "-ClearVolume";
       } else {
          store_ = store;
-         // discover any displays attached to this store
-         List<DisplayWindow> dataWindows = studio_.displays().getAllImageWindows();
-         for (DisplayWindow dv : dataWindows) {
-            if (store_ == dv.getDatastore()) {
-               // set our clonedDisplay to the last one
-               clonedDisplay_ = dv;
-               name_ = clonedDisplay_.getName() + "-ClearVolume";
-            }
-         }
+         clonedDisplay_ = getDisplay(store_);
+         if (clonedDisplay_ != null)
+            name_ = clonedDisplay_.getName() + "-ClearVolume";
+
       }
       displayBus_ = new EventBus();
       cvFrame_ = new JFrame();
@@ -153,27 +148,60 @@ public class CVViewer implements DisplayWindow {
    }
    
    private void initializeRenderer(int timePoint) {
+
+      if (clonedDisplay_ == null) {
+         // There could be a display attached to the store now
+         clonedDisplay_ = getDisplay(store_);
+      }
       
       if (clonedDisplay_ != null) { 
+         name_ = clonedDisplay_.getName() + "-ClearVolume";
          displaySettings_ = clonedDisplay_.getDisplaySettings().copy().build();
       } else {
          displaySettings_ = studio_.displays().getStandardDisplaySettings();
       }
-
-      // I have had 3D display fail because of null channel mins and maxes
-      // advice the user and bail out
-      for (DisplaySettings.ContrastSettings channelContrastSetting : 
-              displaySettings_.getChannelContrastSettings()) {
-         if (channelContrastSetting.getContrastMaxes()[0] == null || 
-                 channelContrastSetting.getContrastMins()[0] == null) {
-            studio_.logs().showError("Display settings are invalid.  \n" + 
-                    "Please adjust min/max sliders and try again");
-            return;
+      
+      maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
+      
+      final int nrCh = store_.getAxisLength(Coords.CHANNEL);
+      
+      // clean up ContrastSettings
+      DisplaySettings.ContrastSettings[] contrastSettings
+              = displaySettings_.getChannelContrastSettings();
+      if (contrastSettings == null || contrastSettings.length != nrCh) {
+         contrastSettings = new DisplaySettings.ContrastSettings[nrCh];
+         for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++) {
+            contrastSettings[ch] = studio_.displays().
+                    getContrastSettings(0, maxValue_, 1.0, true);
+         }
+      } else {
+         for (DisplaySettings.ContrastSettings css : contrastSettings) {
+            if (css.getContrastMaxes()[0] == null
+                    || css.getContrastMins()[0] == null) {
+               css = studio_.displays().
+                       getContrastSettings(0, maxValue_, 1.0, true);
+            }
          }
       }
       
+      // and clean up Colors
+      Color[] channelColors = displaySettings_.getChannelColors();
+      if (channelColors == null || channelColors.length != nrCh) {
+         channelColors = new Color[nrCh];
+         System.arraycopy(colors, 0, channelColors, 0, nrCh);
+      } else {
+         for (int ch = 0; ch < nrCh; ch++) {
+            if (channelColors[ch] == null) {
+               channelColors[ch] = colors[ch];
+            }
+         }
+      }
       
-      final int nrCh = store_.getAxisLength(Coords.CHANNEL);
+      displaySettings_ = displaySettings_.copy().
+              channelColors(channelColors).
+              channelContrastSettings(contrastSettings).
+              build();
+
       Image randomImage = store_.getAnyImage();
             // creates renderer:
       NativeTypeEnum nte = NativeTypeEnum.UnsignedShort;
@@ -210,7 +238,6 @@ public class CVViewer implements DisplayWindow {
 
       clearVolumeRenderer_.setTransferFunction(TransferFunctions.getDefault());
 
-      maxValue_ = 1 << store_.getAnyImage().getMetadata().getBitDepth();
              
       drawVolume(timePoint);
       displayBus_.post(new CanvasDrawCompleteEvent());
@@ -663,6 +690,21 @@ public class CVViewer implements DisplayWindow {
    public float[] getClipBox() {
       if (clearVolumeRenderer_ != null)
          return clearVolumeRenderer_.getClipBox();
+      return null;
+   }
+
+   /**
+    * Find the first DisplayWindow attached to this datastore
+    *
+    * @param store first DisplayWindow or null if not found
+    */
+   private DisplayWindow getDisplay(Datastore store) {
+      List<DisplayWindow> dataWindows = studio_.displays().getAllImageWindows();
+      for (DisplayWindow dv : dataWindows) {
+         if (store == dv.getDatastore()) {
+            return dv;
+         }
+      }
       return null;
    }
    
