@@ -448,6 +448,11 @@ public class ScrollerPanel extends JPanel {
     * was created.
     */
    private boolean updateScrollbar(String axis, int newPos) {
+      // We never want to draw a z Scrollbar, so immediatley return if the
+      // request axis is z
+      if (axis.equals(Coords.Z)) {
+         return false;
+      }
       boolean didAddScroller = false;
       if (!axisToState_.containsKey(axis)) {
          if (newPos != 0) {
