@@ -43,7 +43,7 @@ import org.micromanager.events.DisplayAboutToShowEvent;
  * @author nico
  */
 public final class CVInspectorPanel extends InspectorPanel {
-   private Viewer viewer_;
+   private CVViewer viewer_;
    
    static public final int SLIDERRANGE = 256;
    static public final int SLIDERPIXELWIDTH = 256;
@@ -170,9 +170,9 @@ public final class CVInspectorPanel extends InspectorPanel {
    
    @Override
    public boolean getIsValid(DataViewer viewer) {
-      if (! (viewer instanceof Viewer) )
+      if (! (viewer instanceof CVViewer) )
          return false;
-      viewer_ = (Viewer) viewer;
+      viewer_ = (CVViewer) viewer;
       
       return true;
       
@@ -185,9 +185,9 @@ public final class CVInspectorPanel extends InspectorPanel {
    @Override
    public void setDataViewer(DataViewer viewer) {
       // although this should always be a valid viewer, check anyways
-      if (! (viewer instanceof Viewer) )
+      if (! (viewer instanceof CVViewer) )
          return;
-      viewer_ = (Viewer) viewer;
+      viewer_ = (CVViewer) viewer;
       
       // update range sliders with clipped region of current viewer
       float[] clipBox = viewer_.getClipBox();
@@ -221,7 +221,7 @@ public final class CVInspectorPanel extends InspectorPanel {
       System.out.println("InspectorPanel.cleanup called in ClearVolume plugin");
    }
    
-   public Viewer getViewer() {
+   public CVViewer getViewer() {
       return viewer_;
    }
      
@@ -262,7 +262,7 @@ public final class CVInspectorPanel extends InspectorPanel {
    public void onDisplayAboutToShow(DisplayAboutToShowEvent event) {
       if (attachToNew_.get() ) {
          try {
-            Viewer viewer = new Viewer(studio_, event.getDisplay());
+            CVViewer viewer = new CVViewer(studio_, event.getDisplay());
             viewer.register();
          } catch (Exception ex) {
             ex.printStackTrace();

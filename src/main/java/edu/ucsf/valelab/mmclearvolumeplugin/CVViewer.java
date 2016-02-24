@@ -71,7 +71,7 @@ import org.micromanager.display.NewHistogramsEvent;
  * 
  * @author nico
  */
-public class Viewer implements DisplayWindow {
+public class CVViewer implements DisplayWindow {
 
    private DisplaySettings displaySettings_;
    private final Studio studio_;
@@ -92,7 +92,7 @@ public class Viewer implements DisplayWindow {
    private final Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.MAGENTA,
             Color.PINK, Color.CYAN, Color.YELLOW, Color.ORANGE};
 
-   public Viewer(Studio studio, DisplayWindow display) {
+   public CVViewer(Studio studio, DisplayWindow display) {
       // first make sure that our app's icon will not change:
       // This call still seems to generate a null pointer exception, at 
       // at jogamp.newt.driver.windows.DisplayDriver.<clinit>(DisplayDriver.java:70)
@@ -228,7 +228,7 @@ public class Viewer implements DisplayWindow {
 
       
       // used to reference our instance within the listeners:
-      final Viewer ourViewer = this;
+      final CVViewer ourViewer = this;
 
       // the WindowFocusListener should go into the WindowAdapter, but there it
       // does not work, so add both a WindowListener and WindowFocusListener

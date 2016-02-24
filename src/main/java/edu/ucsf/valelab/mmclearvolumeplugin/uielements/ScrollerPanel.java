@@ -21,7 +21,7 @@
 package edu.ucsf.valelab.mmclearvolumeplugin.uielements;
 
 import com.google.common.eventbus.Subscribe;
-import edu.ucsf.valelab.mmclearvolumeplugin.Viewer;
+import edu.ucsf.valelab.mmclearvolumeplugin.CVViewer;
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 
 import java.awt.Dimension;
@@ -324,7 +324,7 @@ public class ScrollerPanel extends JPanel {
     */
    @Subscribe
    public void onNewDisplaySettings(NewDisplaySettingsEvent event) {
-      if ( event.getDisplay() instanceof Viewer ) {
+      if ( event.getDisplay() instanceof CVViewer ) {
       DisplaySettings settings = event.getDisplaySettings();
       if (settings.getAnimationFPS() != null &&
             settings.getAnimationFPS() != animationFPS_) {
