@@ -36,7 +36,7 @@ import net.miginfocom.swing.MigLayout;
 import org.micromanager.Studio;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.InspectorPanel;
-import org.micromanager.events.DisplayAboutToShowEvent;
+import org.micromanager.events.AcquisitionStartedEvent;
 
 /**
  *
@@ -258,17 +258,17 @@ public final class CVInspectorPanel extends InspectorPanel {
     }
     
     
-   @Subscribe
-   public void onDisplayAboutToShow(DisplayAboutToShowEvent event) {
-      if (attachToNew_.get() ) {
-         try {
-            CVViewer viewer = new CVViewer(studio_, event.getDisplay());
-            viewer.register();
-         } catch (Exception ex) {
-            ex.printStackTrace();
-         }
-
-      }
-   }
+    @Subscribe
+    public void onAcquisitionStartedEvent(AcquisitionStartedEvent ase) {
+       if (attachToNew_.get()) {
+          try {
+             CVViewer viewer = new CVViewer(studio_, ase.getDatastore(), ase.getSettings());
+             viewer.register();
+          } catch (Exception ex) {
+             studio_.logs().logError(ex);
+          }
+       }
+    }
+   
 
 }

@@ -48,6 +48,7 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import org.micromanager.SequenceSettings;
 
 import org.micromanager.Studio;
 import org.micromanager.UserProfile;
@@ -76,7 +77,7 @@ public class CVViewer implements DisplayWindow {
    private DisplaySettings displaySettings_;
    private final Studio studio_;
    private Datastore store_;
-   private final DisplayWindow clonedDisplay_;
+   private DisplayWindow clonedDisplay_;
    private ClearVolumeRendererInterface clearVolumeRenderer_;
    private String name_;
    private final EventBus displayBus_;
@@ -91,8 +92,12 @@ public class CVViewer implements DisplayWindow {
    private int imgCounter_ = 1; // we consistently miss the first image of a time series
    private final Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.MAGENTA,
             Color.PINK, Color.CYAN, Color.YELLOW, Color.ORANGE};
+   
+   public CVViewer(Studio studio) {
+      this(studio, null, null);
+   }
 
-   public CVViewer(Studio studio, DisplayWindow display) {
+   public CVViewer(Studio studio, Datastore store, SequenceSettings sequenceSettings) {
       // first make sure that our app's icon will not change:
       // This call still seems to generate a null pointer exception, at 
       // at jogamp.newt.driver.windows.DisplayDriver.<clinit>(DisplayDriver.java:70)
@@ -102,10 +107,22 @@ public class CVViewer implements DisplayWindow {
       ourClass_ = this.getClass();
       studio_ = studio;
       UserProfile profile = studio_.getUserProfile();
-      if (display == null) 
+      if (store == null) {
          clonedDisplay_ = studio_.displays().getCurrentWindow();
-      else 
-         clonedDisplay_ = display;
+         store_ = clonedDisplay_.getDatastore();
+         name_ = clonedDisplay_.getName() + "-ClearVolume";
+      } else {
+         store_ = store;
+         // discover any displays attached to this store
+         List<DisplayWindow> dataWindows = studio_.displays().getAllImageWindows();
+         for (DisplayWindow dv : dataWindows) {
+            if (store_ == dv.getDatastore()) {
+               // set our clonedDisplay to the last one
+               clonedDisplay_ = dv;
+               name_ = clonedDisplay_.getName() + "-ClearVolume";
+            }
+         }
+      }
       displayBus_ = new EventBus();
       cvFrame_ = new JFrame();
       int xLoc = profile.getInt(ourClass_, XLOC, 100);
@@ -113,14 +130,14 @@ public class CVViewer implements DisplayWindow {
       cvFrame_.setLocation(xLoc, yLoc);
       coordsBuilder_ = studio_.data().getCoordsBuilder();
       
-      // check for existing display. Is only here and not above since 
-      // a number of variables can not be final otherwise
-      if (clonedDisplay_ == null) {
+      if (store_ == null) {
          ij.IJ.error("No data set open");
          return;
       }
-      store_ = clonedDisplay_.getDatastore();
-      name_ = clonedDisplay_.getName() + "-ClearVolume";
+      
+      if (name_ == null) {
+         name_ = store_.getSummaryMetadata().getPrefix();
+      }
 
       // check if we have all z slices in the first time point
       // if not, rely on the onNewImage function to initialize the renderer
@@ -129,17 +146,19 @@ public class CVViewer implements DisplayWindow {
       currentlyShownTimePoint_ = -1; // set to make sure the first volume will be drawn
       Coords intendedDimensions = store_.getSummaryMetadata().getIntendedDimensions();
       if (nrImages == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
-      //if (nrImages == store_.getAxisLength(Coords.CHANNEL) * store_.getAxisLength(Coords.Z)) {
-         int firstTimePoint = clonedDisplay_.getDisplayedImages().get(0).getCoords().getTime();
-         initializeRenderer(firstTimePoint);
+         initializeRenderer(0);
       }
 
 
    }
    
    private void initializeRenderer(int timePoint) {
-       
-      displaySettings_ = clonedDisplay_.getDisplaySettings().copy().build();
+      
+      if (clonedDisplay_ != null) { 
+         displaySettings_ = clonedDisplay_.getDisplaySettings().copy().build();
+      } else {
+         displaySettings_ = studio_.displays().getStandardDisplaySettings();
+      }
 
       // I have had 3D display fail because of null channel mins and maxes
       // advice the user and bail out
