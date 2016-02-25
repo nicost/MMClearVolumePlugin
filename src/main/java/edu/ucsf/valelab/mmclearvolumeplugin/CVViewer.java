@@ -28,7 +28,6 @@ import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
-import edu.ucsf.valelab.mmclearvolumeplugin.events.DisplayDestroyedEvent;
 
 import ij.ImagePlus;
 import ij.gui.ImageWindow;
@@ -38,7 +37,6 @@ import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
-import java.awt.Toolkit;
 import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -306,9 +304,7 @@ public class CVViewer implements DisplayWindow {
 
          @Override
          public void windowLostFocus(WindowEvent e) {
-            // since clearVolume changed the aplication icon, change it back here:
-            cvFrame_.setIconImage(Toolkit.getDefaultToolkit().getImage(
-               getClass().getResource("/org/micromanager/icons/microscope.gif")));
+            // nothing to do
          }
       }
       );
@@ -320,7 +316,7 @@ public class CVViewer implements DisplayWindow {
             profile.setInt(ourClass_, XLOC, cvFrame_.getX());
             profile.setInt(ourClass_, YLOC, cvFrame_.getY());
             studio_.getDisplayManager().removeViewer(ourViewer);
-            studio_.events().post(new DisplayDestroyedEvent(ourViewer) {});
+            // studio_.events().post(new DisplayDestroyedEvent(ourViewer) {});
             displayBus_.unregister(ourViewer);
             store_.unregisterForEvents(ourViewer);
             clearVolumeRenderer_.close();
@@ -401,13 +397,13 @@ public class CVViewer implements DisplayWindow {
 
    @Override
    public void registerForEvents(Object o) {
-      System.out.println("Registering for events");
+      System.out.println("Registering for event: " + o.toString());
       displayBus_.register(o);
    }
 
    @Override
    public void unregisterForEvents(Object o) {
-      System.out.println("Unregistering for events");
+      System.out.println("Unregistering for event: " + o.toString());
       displayBus_.unregister(o);
    }
 
