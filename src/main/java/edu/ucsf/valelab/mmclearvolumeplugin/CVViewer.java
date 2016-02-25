@@ -766,7 +766,7 @@ public class CVViewer implements DisplayWindow {
             Integer[] mins = new Integer[numComponents];
             Integer[] maxes = new Integer[numComponents];
             Double[] gammas = new Double[numComponents];
-            ArrayList<HistogramData> datas = new ArrayList(image.getNumComponents());
+            final ArrayList<HistogramData> datas = new ArrayList(image.getNumComponents());
             for (int j = 0; j < image.getNumComponents(); ++j) {
                gammas[j] = displaySettings_.getSafeContrastGamma(ch, j, 1.0);
                HistogramData data = studio_.displays().calculateHistogram(
@@ -782,7 +782,14 @@ public class CVViewer implements DisplayWindow {
             displaySettings_ = builder.safeUpdateContrastSettings(
                     studio_.displays().getContrastSettings(
                             mins, maxes, gammas, true), ch).build();
-            this.postEvent(new NewHistogramsEvent(ch, datas));
+            final int tmpCh = ch;
+            if (SwingUtilities.isEventDispatchThread()) {
+               postEvent(new NewHistogramsEvent(tmpCh, datas));
+            } else {
+               SwingUtilities.invokeLater(() -> {
+                  postEvent(new NewHistogramsEvent(tmpCh, datas));
+               });
+            }
          }
       }
        postEvent(new NewDisplaySettingsEvent(displaySettings_, this));
