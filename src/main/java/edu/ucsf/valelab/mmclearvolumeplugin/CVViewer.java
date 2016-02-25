@@ -28,6 +28,7 @@ import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
+import edu.ucsf.valelab.mmclearvolumeplugin.events.DisplayDestroyedEvent;
 
 import ij.ImagePlus;
 import ij.gui.ImageWindow;
@@ -318,11 +319,12 @@ public class CVViewer implements DisplayWindow {
             UserProfile profile = studio_.profile();
             profile.setInt(ourClass_, XLOC, cvFrame_.getX());
             profile.setInt(ourClass_, YLOC, cvFrame_.getY());
-            clearVolumeRenderer_.close();
-            cvFrame_.dispose();
             studio_.getDisplayManager().removeViewer(ourViewer);
+            studio_.events().post(new DisplayDestroyedEvent(ourViewer) {});
             displayBus_.unregister(ourViewer);
             store_.unregisterForEvents(ourViewer);
+            clearVolumeRenderer_.close();
+            cvFrame_.dispose();
             open_ = false;
          }
 
@@ -651,7 +653,7 @@ public class CVViewer implements DisplayWindow {
     */
    public void straighten() {
       if (clearVolumeRenderer_ != null) {
-         // Convoluted way to resey the rotation
+         // Convoluted way to reset the rotation
          // I probably should use rotationControllers...
          float x = clearVolumeRenderer_.getTranslationX();
          float y = clearVolumeRenderer_.getTranslationY();
