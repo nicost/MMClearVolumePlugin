@@ -401,13 +401,13 @@ public class CVViewer implements DisplayWindow {
 
    @Override
    public void registerForEvents(Object o) {
-      // System.out.println("Registering for events");
+      System.out.println("Registering for events");
       displayBus_.register(o);
    }
 
    @Override
    public void unregisterForEvents(Object o) {
-      // System.out.println("Unregistering for events");
+      System.out.println("Unregistering for events");
       displayBus_.unregister(o);
    }
 
