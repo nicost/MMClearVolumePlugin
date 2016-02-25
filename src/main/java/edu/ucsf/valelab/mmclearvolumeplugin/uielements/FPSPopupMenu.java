@@ -36,8 +36,8 @@ import javax.swing.JTextField;
 import javax.swing.MenuElement;
 import javax.swing.MenuSelectionManager;
 
+import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
-import org.micromanager.display.DisplayWindow;
 
 /**
  * This class provides an interface for selecting the FPS at which to display
@@ -93,7 +93,7 @@ public class FPSPopupMenu extends JPopupMenu {
       public void menuSelectionChanged(boolean isIncluded) {}
    }
 
-   public FPSPopupMenu(final DisplayWindow display, double initialVal) {
+   public FPSPopupMenu(final DataViewer display, double initialVal) {
       final FPSSlider slider = new FPSSlider();
       slider.initialize();
       final JTextField field = new JTextField(3);

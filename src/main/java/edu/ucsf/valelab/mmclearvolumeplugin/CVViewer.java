@@ -29,15 +29,11 @@ import coremem.types.NativeTypeEnum;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 
-import ij.ImagePlus;
-import ij.gui.ImageWindow;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.Dimension;
-import java.awt.GraphicsConfiguration;
-import java.awt.Window;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
@@ -58,6 +54,7 @@ import org.micromanager.data.NewImageEvent;
 import org.micromanager.data.Metadata;
 import org.micromanager.data.SummaryMetadata;
 import org.micromanager.data.internal.DefaultImage;
+import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.HistogramData;
@@ -71,7 +68,7 @@ import org.micromanager.display.NewHistogramsEvent;
  * 
  * @author nico
  */
-public class CVViewer implements DisplayWindow {
+public class CVViewer implements DataViewer {
 
    private DisplaySettings displaySettings_;
    private final Studio studio_;
@@ -726,7 +723,7 @@ public class CVViewer implements DisplayWindow {
    }
    
    // Following functions are included since we need to be a DisplayWindow, not a DataViewer
-
+/*
    @Override
    public void displayStatusString(String string) {
       throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
@@ -748,50 +745,7 @@ public class CVViewer implements DisplayWindow {
       return 1.0;
    }
 
-   @Override
-   public void autostretch() {
-      Coords baseCoords = getDisplayedImages().get(0).getCoords();
-      Double extremaPercentage = displaySettings_.getExtremaPercentage();
-      if (extremaPercentage == null) {
-         extremaPercentage = 0.0;
-      }
-      DisplaySettings.DisplaySettingsBuilder builder = 
-              displaySettings_.copy();
-      for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ++ch) {
-         Image image = store_.getImage(baseCoords.copy().channel(ch).build());
-         if (image != null) {
-            int numComponents = image.getNumComponents();
-            Integer[] mins = new Integer[numComponents];
-            Integer[] maxes = new Integer[numComponents];
-            Double[] gammas = new Double[numComponents];
-            final ArrayList<HistogramData> datas = new ArrayList(image.getNumComponents());
-            for (int j = 0; j < image.getNumComponents(); ++j) {
-               gammas[j] = displaySettings_.getSafeContrastGamma(ch, j, 1.0);
-               HistogramData data = studio_.displays().calculateHistogram(
-                       getDisplayedImages().get(ch),
-                       j,
-                       store_.getAnyImage().getMetadata().getBitDepth(),
-                       store_.getAnyImage().getMetadata().getBitDepth(),
-                       extremaPercentage);
-               mins[j] = data.getMinIgnoringOutliers();
-               maxes[j] = data.getMaxIgnoringOutliers();
-               datas.add(j, data);
-            }
-            displaySettings_ = builder.safeUpdateContrastSettings(
-                    studio_.displays().getContrastSettings(
-                            mins, maxes, gammas, true), ch).build();
-            final int tmpCh = ch;
-            if (SwingUtilities.isEventDispatchThread()) {
-               postEvent(new NewHistogramsEvent(tmpCh, datas));
-            } else {
-               SwingUtilities.invokeLater(() -> {
-                  postEvent(new NewHistogramsEvent(tmpCh, datas));
-               });
-            }
-         }
-      }
-       postEvent(new NewDisplaySettingsEvent(displaySettings_, this));
-   }
+  
 
    @Override
    public ImagePlus getImagePlus() {
@@ -843,6 +797,52 @@ public class CVViewer implements DisplayWindow {
    @Override 
    public void setCustomTitle(String string) {
       
+   }
+   
+    @Override
+    */
+   public void autostretch() {
+      Coords baseCoords = getDisplayedImages().get(0).getCoords();
+      Double extremaPercentage = displaySettings_.getExtremaPercentage();
+      if (extremaPercentage == null) {
+         extremaPercentage = 0.0;
+      }
+      DisplaySettings.DisplaySettingsBuilder builder = 
+              displaySettings_.copy();
+      for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ++ch) {
+         Image image = store_.getImage(baseCoords.copy().channel(ch).build());
+         if (image != null) {
+            int numComponents = image.getNumComponents();
+            Integer[] mins = new Integer[numComponents];
+            Integer[] maxes = new Integer[numComponents];
+            Double[] gammas = new Double[numComponents];
+            final ArrayList<HistogramData> datas = new ArrayList(image.getNumComponents());
+            for (int j = 0; j < image.getNumComponents(); ++j) {
+               gammas[j] = displaySettings_.getSafeContrastGamma(ch, j, 1.0);
+               HistogramData data = studio_.displays().calculateHistogram(
+                       getDisplayedImages().get(ch),
+                       j,
+                       store_.getAnyImage().getMetadata().getBitDepth(),
+                       store_.getAnyImage().getMetadata().getBitDepth(),
+                       extremaPercentage);
+               mins[j] = data.getMinIgnoringOutliers();
+               maxes[j] = data.getMaxIgnoringOutliers();
+               datas.add(j, data);
+            }
+            displaySettings_ = builder.safeUpdateContrastSettings(
+                    studio_.displays().getContrastSettings(
+                            mins, maxes, gammas, true), ch).build();
+            final int tmpCh = ch;
+            if (SwingUtilities.isEventDispatchThread()) {
+               postEvent(new NewHistogramsEvent(tmpCh, datas));
+            } else {
+               SwingUtilities.invokeLater(() -> {
+                  postEvent(new NewHistogramsEvent(tmpCh, datas));
+               });
+            }
+         }
+      }
+       postEvent(new NewDisplaySettingsEvent(displaySettings_, this));
    }
    
    @Subscribe

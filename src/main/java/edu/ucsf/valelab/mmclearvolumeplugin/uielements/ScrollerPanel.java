@@ -53,8 +53,8 @@ import org.micromanager.data.Coords;
 import org.micromanager.data.Datastore;
 import org.micromanager.data.NewImageEvent;
 import org.micromanager.display.DisplaySettings;
-import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.NewDisplaySettingsEvent;
+import org.micromanager.display.DataViewer;
 
 import org.micromanager.data.internal.DefaultCoords;
 
@@ -66,7 +66,7 @@ public class ScrollerPanel extends JPanel {
 
    private final Studio studio_;
    private final Datastore store_;
-   private final DisplayWindow display_;
+   private final DataViewer display_;
    private final Thread updateThread_;
    private final LinkedBlockingQueue<Coords> updateQueue_;
    private final AtomicBoolean shouldStopUpdates_;
@@ -90,7 +90,7 @@ public class ScrollerPanel extends JPanel {
    private boolean shouldPostEvents_ = true;
 
    public ScrollerPanel(final Studio studio, final Datastore store, 
-           final DisplayWindow display) {
+           final DataViewer display) {
       studio_ = studio;
       store_ = store;
       display_ = display;
