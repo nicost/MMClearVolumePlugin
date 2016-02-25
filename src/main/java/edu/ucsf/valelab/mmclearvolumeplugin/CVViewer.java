@@ -722,86 +722,7 @@ public class CVViewer implements DataViewer {
       return null;
    }
    
-   // Following functions are included since we need to be a DisplayWindow, not a DataViewer
-/*
-   @Override
-   public void displayStatusString(String string) {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public void setMagnification(double d) {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public void adjustZoom(double d) {
-      // Not sure if this should be implemented...
-   }
-
-   @Override
-   public double getMagnification() {
-      // Not sure if this should be implemented
-      return 1.0;
-   }
-
-  
-
-   @Override
-   public ImagePlus getImagePlus() {
-      throw new UnsupportedOperationException("What ImagePlus do you want?"); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public boolean requestToClose() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public void forceClosed() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public void toggleFullScreen() {
-   if (clearVolumeRenderer_ != null) {
-         clearVolumeRenderer_.toggleFullScreen();
-      }
-   }
-
-   @Override
-   public GraphicsConfiguration getScreenConfig() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public DisplayWindow duplicate() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public void toFront() {
-      cvFrame_.toFront();
-   }
-
-   @Override
-   public ImageWindow getImageWindow() {
-      throw new UnsupportedOperationException("Not supported yet."); //To change body of generated methods, choose Tools | Templates.
-   }
-
-   @Override
-   public Window getAsWindow() {
-      return cvFrame_.getOwner();
-   }
-
-   @Override 
-   public void setCustomTitle(String string) {
-      
-   }
-   
-    @Override
-    */
-   public void autostretch() {
+   private void autostretch() {
       Coords baseCoords = getDisplayedImages().get(0).getCoords();
       Double extremaPercentage = displaySettings_.getExtremaPercentage();
       if (extremaPercentage == null) {
@@ -849,7 +770,8 @@ public class CVViewer implements DataViewer {
    public void onNewImage(NewImageEvent event) {
       Coords coords = event.getCoords();
       int t = coords.getTime();
-      if (t != currentlyShownTimePoint_) { // we are not yes showing this time point
+      if (t != currentlyShownTimePoint_) { 
+         // we are not yet showing this time point
          // check if we have all z planes, if so draw the volume
          /** The following code is exact, but very slow
          Coords zStackCoords = studio_.data().getCoordsBuilder().time(t).build();
