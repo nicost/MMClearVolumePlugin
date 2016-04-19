@@ -21,10 +21,7 @@ and deployment will be much simpler in the near future!
 
 
 TODOs:
-* Add ability to work with time-lapse data
 * Easy deployment
 * Video capture
-* Remember window positions
-* Speed up data loading
 
 
