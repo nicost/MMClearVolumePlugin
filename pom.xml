@@ -19,7 +19,7 @@
       </repository>
       <repository>
          <id>CoreMem</id>
-         <url>http://dl.bintray.com/rtlib/CoreMem</url>
+         <url>http://dl.bintray.com/clearcontrol/ClearControl</url>
       </repository>
       <repository>
          <id>project.local</id>
@@ -100,7 +100,7 @@
       <dependency>
          <groupId>net.coremem</groupId>
          <artifactId>CoreMem</artifactId>
-         <version>0.1.4</version>
+         <version>0.1.5</version>
       </dependency>
       <dependency>
          <groupId>net.clearvolume</groupId>
