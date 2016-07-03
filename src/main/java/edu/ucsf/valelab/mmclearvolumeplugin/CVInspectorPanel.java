@@ -262,7 +262,7 @@ public final class CVInspectorPanel extends InspectorPanel {
     public void onAcquisitionStartedEvent(AcquisitionStartedEvent ase) {
        if (attachToNew_.get()) {
           try {
-             CVViewer viewer = new CVViewer(studio_, ase.getDatastore(), ase.getSettings());
+             CVViewer viewer = new CVViewer(studio_, ase.getDatastore());
              viewer.register();
           } catch (Exception ex) {
              studio_.logs().logError(ex);

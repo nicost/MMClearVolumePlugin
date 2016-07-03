@@ -43,7 +43,6 @@ import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
-import org.micromanager.SequenceSettings;
 
 import org.micromanager.Studio;
 import org.micromanager.UserProfile;
@@ -90,10 +89,10 @@ public class CVViewer implements DataViewer {
             Color.PINK, Color.CYAN, Color.YELLOW, Color.ORANGE};
    
    public CVViewer(Studio studio) {
-      this(studio, null, null);
+      this(studio, null);
    }
 
-   public CVViewer(Studio studio, Datastore store, SequenceSettings sequenceSettings) {
+   public CVViewer(Studio studio, Datastore store) {
       // first make sure that our app's icon will not change:
       // This call still seems to generate a null pointer exception, at 
       // at jogamp.newt.driver.windows.DisplayDriver.<clinit>(DisplayDriver.java:70)
@@ -741,11 +740,12 @@ public class CVViewer implements DataViewer {
             for (int j = 0; j < image.getNumComponents(); ++j) {
                gammas[j] = displaySettings_.getSafeContrastGamma(ch, j, 1.0);
                HistogramData data = studio_.displays().calculateHistogram(
-                       getDisplayedImages().get(ch),
-                       j,
-                       store_.getAnyImage().getMetadata().getBitDepth(),
-                       store_.getAnyImage().getMetadata().getBitDepth(),
-                       extremaPercentage);
+                     getDisplayedImages().get(ch),
+                     j,
+                     store_.getAnyImage().getMetadata().getBitDepth(),
+                     store_.getAnyImage().getMetadata().getBitDepth(),
+                     extremaPercentage,
+                     false  /* make sure that we do not use stdev */ );
                mins[j] = data.getMinIgnoringOutliers();
                maxes[j] = data.getMaxIgnoringOutliers();
                datas.add(j, data);
