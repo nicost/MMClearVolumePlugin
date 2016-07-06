@@ -16,8 +16,15 @@ For developers:  MMClearVolumePlugin is set-up as a Maven project.  To build it,
 ```mvn dependency:copy-dependencies``` which copies all dependent JARs into`` `$target/cv_dependencies```. These files can 
 then be copied in ```jars/``` dir of MM2.  Look for any duplicate jars by checking the contents of ```plugins``` and ```mmplugins```.
 Launch Micro-Manager by running ```java -cp jars/*:ij.jar ij.ImagaJ``` (in the Micro-Manager 2.0 directory).  Make sure that 
-you launch Java 1.8 (ClearVolume does not work in Java 1.6, which is usually used by Micro-Manager).  Hopefully, installation 
-and deployment will be much simpler in the near future!
+you launch Java 1.8 (ClearVolume does not work in Java 1.6, which is usually used by Micro-Manager).  On Windows, you can replace the ImageJ.cfg file with something like the following:
+
+```
+.
+..\Java\jre1.8.0_91\bin\javaw.exe
+-Xmx4000m -cp .\jars\*;ij.jar ij.ImageJ
+```
+
+Hopefully, installation and deployment will be much simpler in the near future!
 
 
 TODOs:
