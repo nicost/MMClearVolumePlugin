@@ -97,7 +97,7 @@ public class CVViewer implements DataViewer {
       // This call still seems to generate a null pointer exception, at 
       // at jogamp.newt.driver.windows.DisplayDriver.<clinit>(DisplayDriver.java:70)
       // which is ugly but seems harmless
-      NewtFactory.setWindowIcons(null);
+      // NewtFactory.setWindowIcons(null);
       
       ourClass_ = this.getClass();
       studio_ = studio;
