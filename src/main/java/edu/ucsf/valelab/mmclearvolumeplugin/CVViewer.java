@@ -20,7 +20,6 @@ import clearvolume.transferf.TransferFunction1D;
 import clearvolume.transferf.TransferFunctions;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
-import com.jogamp.newt.NewtFactory;
 
 import com.jogamp.newt.awt.NewtCanvasAWT;
 
