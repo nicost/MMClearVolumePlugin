@@ -22,9 +22,8 @@
          <url>http://dl.bintray.com/clearcontrol/ClearControl</url>
       </repository>
       <repository>
-         <id>project.local</id>
-         <name>project</name>
-         <url>file:${project.basedir}/repo</url>
+         <id>org.micromanager</id>
+         <url>http://valelab.ucsf.edu/~nico/maven</url>
       </repository>
       <repository>
          <id>imagej.public</id>
@@ -96,17 +95,17 @@
       </dependency>
       <dependency>
          <groupId>org.micromanager</groupId>
-         <artifactId>MMJ_</artifactId>
-         <version>2.0-SNAPSHOT</version>
-      </dependency>
-      <dependency>
-         <groupId>org.micromanager</groupId>
          <artifactId>MMCoreJ</artifactId>
          <version>2.0-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>org.micromanager</groupId>
          <artifactId>MMAcqEngine</artifactId>
+         <version>2.0-SNAPSHOT</version>
+      </dependency>
+      <dependency>
+         <groupId>org.micromanager</groupId>
+         <artifactId>MMJ_</artifactId>
          <version>2.0-SNAPSHOT</version>
       </dependency>
       <dependency>
