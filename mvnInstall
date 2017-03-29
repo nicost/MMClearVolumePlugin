@@ -1,4 +1,4 @@
-mvn deploy:deploy-file -Dfile=~/git/micromanager2/micromanager/mmstudio/MMJ_.jar -DgroupId=org.micromanager -DartifactId=MMJ_ -Dversion=2.0-SNAPSHOT -Dpackaging=jar -Durl=file:/Volumes/nstuurman/public_html/maven -DrepositoryId=in-project
-mvn deploy:deploy-file -Dfile=/Users/nico/git/micromanager2/micro-manager/acqEngine/MMAcqEngine.jar -DgroupId=org.micromanager -DartifactId=MMAcqEngine -Dversion=2.0-SNAPSHOT -Dpackaging=jar -Durl=file:/Volumes/nstuurman/public_html/maven -DrepositoryId=in-project
-mvn deploy:deploy-file -Dfile=/Users/nico/git/micromanager2/micro-manager/MMCoreJ_wrap/MMCoreJ.jar -DgroupId=org.micromanager -DartifactId=MMCoreJ.jar -Dversion=2.0-SNAPSHOT -Dpackaging=jar -Durl=file:/Volumes/nstuurman/public_html/maven -DrepositoryId=in-project
+mvn deploy:deploy-file -Dfile=/Users/nico/git/micromanager2/micro-manager/mmstudio/MMJ_.jar -DgroupId=org.micromanager -DartifactId=MMJ_ -Dversion=2.0.1-SNAPSHOT -Dpackaging=jar -Durl=file:/Volumes/nstuurman/public_html/maven -DrepositoryId=in-project
+mvn deploy:deploy-file -Dfile=/Users/nico/git/micromanager2/micro-manager/acqEngine/MMAcqEngine.jar -DgroupId=org.micromanager -DartifactId=MMAcqEngine -Dversion=2.0.1-SNAPSHOT -Dpackaging=jar -Durl=file:/Volumes/nstuurman/public_html/maven -DrepositoryId=in-project
+mvn deploy:deploy-file -Dfile=/Users/nico/git/micromanager2/micro-manager/MMCoreJ_wrap/MMCoreJ.jar -DgroupId=org.micromanager -DartifactId=MMCoreJ -Dversion=2.0.1-SNAPSHOT -Dpackaging=jar -Durl=file:/Volumes/nstuurman/public_html/maven -DrepositoryId=in-project
 
