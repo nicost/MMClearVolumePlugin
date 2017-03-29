@@ -19,11 +19,11 @@ import clearvolume.renderer.ClearVolumeRendererInterface;
 import clearvolume.renderer.factory.ClearVolumeRendererFactory;
 import clearvolume.transferf.TransferFunction1D;
 import clearvolume.transferf.TransferFunctions;
-import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
 
 import com.jogamp.newt.awt.NewtCanvasAWT;
 
+import com.google.common.eventbus.EventBus;
+import com.google.common.eventbus.Subscribe;
 import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
 
@@ -55,6 +55,7 @@ import org.micromanager.data.SummaryMetadata;
 import org.micromanager.data.internal.DefaultImage;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.DisplaySettings;
+import org.micromanager.display.DisplaySettings.ColorMode;
 import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.HistogramData;
 import org.micromanager.display.NewDisplaySettingsEvent;
@@ -344,7 +345,8 @@ public class CVViewer implements DataViewer {
          if (ds.getChannelColorMode() == DisplaySettings.ColorMode.GRAYSCALE) {
             nc = Color.WHITE;
          }
-         if (displaySettings_.getChannelColors()[ch] != nc) {
+         if (displaySettings_.getChannelColors()[ch] != nc || 
+                 displaySettings_.getChannelColorMode() != ds.getChannelColorMode() ) {
             clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(nc));
          }
          if (!Objects.equals 
@@ -560,6 +562,9 @@ public class CVViewer implements DataViewer {
             Color[] chColors = displaySettings_.getChannelColors();
             chColors[ch] = chColor;
             displaySettings_ = displaySettings_.copy().channelColors(chColors).build();
+         }
+         if (displaySettings_.getChannelColorMode() == ColorMode.GRAYSCALE) {
+            chColor = Color.WHITE;
          }
          clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
          try {
