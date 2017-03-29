@@ -2,7 +2,8 @@
  * Binding to ClearVolume 3D viewer View Micro-Manager datasets in 3D
  *
  * AUTHOR: Nico Stuurman COPYRIGHT: Regents of the University of California,
- * 2015 LICENSE: This file is distributed under the BSD license. License text is
+ * 2015 
+ * LICENSE: This file is distributed under the BSD license. License text is
  * included with the source distribution.
  *
  * This file is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -134,7 +135,9 @@ public class CVViewer implements DataViewer {
       final int nrImages = store_.getImagesMatching(zStackCoords).size();
       currentlyShownTimePoint_ = -1; // set to make sure the first volume will be drawn
       Coords intendedDimensions = store_.getSummaryMetadata().getIntendedDimensions();
-      if (nrImages == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
+      if (intendedDimensions != null && nrImages == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
+         initializeRenderer(0);
+      } else if (intendedDimensions == null) {
          initializeRenderer(0);
       }
 
@@ -273,18 +276,15 @@ public class CVViewer implements DataViewer {
     * after the constructor.
     */
    public void register() {
-     // if (!open_) {
-      //   return;
-      //}
 
       displayBus_.register(this);
       store_.registerForEvents(this);
       studio_.getDisplayManager().addViewer(this);
                   
       // Ensure there are histograms for our display.
-      if (open_)
+      if (open_) {
          updateHistograms();
-
+      }
       
       // used to reference our instance within the listeners:
       final CVViewer ourViewer = this;
@@ -340,9 +340,12 @@ public class CVViewer implements DataViewer {
                  ds.getSafeIsVisible(ch, true)) ) {
             clearVolumeRenderer_.setLayerVisible(ch, ds.getSafeIsVisible(ch, true) );
          }
-         if (displaySettings_.getChannelColors()[ch] != ds.getChannelColors()[ch]) {
-            Color chColor = ds.getChannelColors()[ch];
-            clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(chColor));
+         Color nc = ds.getChannelColors()[ch];
+         if (ds.getChannelColorMode() == DisplaySettings.ColorMode.GRAYSCALE) {
+            nc = Color.WHITE;
+         }
+         if (displaySettings_.getChannelColors()[ch] != nc) {
+            clearVolumeRenderer_.setTransferFunction(ch, getGradientForColor(nc));
          }
          if (!Objects.equals 
                (displaySettings_.getChannelContrastSettings()[ch].getContrastMaxes()[0], 
@@ -529,8 +532,8 @@ public class CVViewer implements DataViewer {
          double pixelSizeUm = metadata.getPixelSizeUm();
          if (pixelSizeUm == 0.0)
             pixelSizeUm = 1.0;
-         double stepSizeUm = summary.getZStepUm();
-         if (stepSizeUm == 0.0)
+         Double stepSizeUm = summary.getZStepUm();
+         if (stepSizeUm == null || stepSizeUm == 0.0)
             stepSizeUm = 1.0;
          
          // pass data to renderer: (this call takes a long time!)

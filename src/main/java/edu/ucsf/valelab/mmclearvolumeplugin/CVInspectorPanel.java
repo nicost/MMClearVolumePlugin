@@ -2,7 +2,8 @@
  * Binding to ClearVolume 3D viewer View Micro-Manager datasets in 3D
  *
  * AUTHOR: Nico Stuurman COPYRIGHT: Regents of the University of California,
- * 2015 LICENSE: This file is distributed under the BSD license. License text is
+ * 2015 
+ * LICENSE: This file is distributed under the BSD license. License text is
  * included with the source distribution.
  *
  * This file is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -34,6 +35,7 @@ import javax.swing.event.ChangeEvent;
 import net.miginfocom.swing.MigLayout;
 
 import org.micromanager.Studio;
+import org.micromanager.data.Coords;
 import org.micromanager.display.DataViewer;
 import org.micromanager.display.InspectorPanel;
 import org.micromanager.events.AcquisitionStartedEvent;
@@ -199,8 +201,8 @@ public final class CVInspectorPanel extends InspectorPanel {
          zSlider_.setValue(clipValToSliderVal(clipBox[4]));
          zSlider_.setUpperValue(clipValToSliderVal(clipBox[5]));
       }
-      if (viewer_.getDatastore().getSummaryMetadata().getIntendedDimensions().
-              getTime() > 1) {
+      Coords intendedDimensions = viewer_.getDatastore().getSummaryMetadata().getIntendedDimensions();
+      if (intendedDimensions != null && intendedDimensions.getTime() > 1) {
          if (sp_ != null) {
             sp_.stopUpdateThread();
             this.remove(sp_);

@@ -2,7 +2,8 @@
  * Binding to ClearVolume 3D viewer View Micro-Manager datasets in 3D
  *
  * AUTHOR: Nico Stuurman COPYRIGHT: Regents of the University of California,
- * 2015 LICENSE: This file is distributed under the BSD license. License text is
+ * 2015 
+ * LICENSE: This file is distributed under the BSD license. License text is
  * included with the source distribution.
  *
  * This file is distributed in the hope that it will be useful, but WITHOUT ANY
@@ -17,6 +18,7 @@ package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import org.micromanager.MenuPlugin;
 import org.micromanager.Studio;
+import org.micromanager.display.DisplayGearMenuPlugin;
 import org.micromanager.display.InspectorPanel;
 import org.micromanager.display.InspectorPlugin;
 
@@ -28,14 +30,14 @@ import org.scijava.plugin.SciJavaPlugin;
  * Most of the action happens in the CVViewer class
  * @author nico
  */
-@Plugin(type = MenuPlugin.class)
+@Plugin(type = DisplayGearMenuPlugin.class)
 public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin, InspectorPlugin {
 
    private Studio studio_;
    static public final String VERSION_INFO = "1.5.0";
-   static private final String COPYRIGHT_NOTICE = "Copyright by UCSF, 2015";
+   static private final String COPYRIGHT_NOTICE = "Copyright by UCSF, 2015-2017";
    static private final String DESCRIPTION = "View Micro-Manager data in the ClearVolume viewer";
-   static private final String NAME = "ClearVolume";
+   static private final String NAME = "3D (ClearVolume)";
    
 
 
