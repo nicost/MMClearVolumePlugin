@@ -24,6 +24,7 @@ import com.jogamp.newt.awt.NewtCanvasAWT;
 
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
+import com.jogamp.newt.NewtFactory;
 import coremem.fragmented.FragmentedMemory;
 import coremem.types.NativeTypeEnum;
 
@@ -86,6 +87,7 @@ public class CVViewer implements DataViewer {
    private final String YLOC = "YLocation";
    private final Class<?> ourClass_;
    private int imgCounter_ = 0;
+   private int activeChannel_ = 0;
    private final Color[] colors = {Color.RED, Color.GREEN, Color.BLUE, Color.MAGENTA,
             Color.PINK, Color.CYAN, Color.YELLOW, Color.ORANGE};
    
@@ -98,7 +100,11 @@ public class CVViewer implements DataViewer {
       // This call still seems to generate a null pointer exception, at 
       // at jogamp.newt.driver.windows.DisplayDriver.<clinit>(DisplayDriver.java:70)
       // which is ugly but seems harmless
-      // NewtFactory.setWindowIcons(null);
+      try {
+         NewtFactory.setWindowIcons(null);
+      } catch (NullPointerException npe) {
+         // this seems to always happen, but otherwise not be a problem
+      }
       
       ourClass_ = this.getClass();
       studio_ = studio;
@@ -326,6 +332,22 @@ public class CVViewer implements DataViewer {
       });
 
    }
+   
+   private void setOneChannelVisible(int chToBeVisible) {
+      for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++) {
+         boolean setVisible = false;
+         if (ch == chToBeVisible) {
+            setVisible = true;
+         }
+         clearVolumeRenderer_.setLayerVisible(ch, setVisible);
+      }
+   }
+   
+   private void setAllChannelsVisible() {
+      for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++) {
+         clearVolumeRenderer_.setLayerVisible(ch, true);
+      }
+   }
 
    /**
     * There was an update to the display settings, so update the display
@@ -335,7 +357,13 @@ public class CVViewer implements DataViewer {
     */
    @Override
    public void setDisplaySettings(DisplaySettings ds) {
-      
+      if (displaySettings_.getChannelColorMode() != ds.getChannelColorMode()) {
+         if (ds.getChannelColorMode() == DisplaySettings.ColorMode.COMPOSITE) {
+            setAllChannelsVisible();
+         } else {
+            setOneChannelVisible(activeChannel_); // todo: get the channel selected in the slider
+         }
+      }
       for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++ ) {
          if ( !Objects.equals(displaySettings_.getSafeIsVisible(ch, true), 
                  ds.getSafeIsVisible(ch, true)) ) {
@@ -423,9 +451,13 @@ public class CVViewer implements DataViewer {
       // ClearVolume uses commands and keystrokes that work on a given channel
       // Make sure that the channel that ClearVolume works on is synced with the
       // Channel slider position in the ClearVolume panel in the Image Inspector
-       clearVolumeRenderer_.setCurrentRenderLayer(coords.getChannel());
-       drawVolume(coords.getTime());
-       displayBus_.post(new CanvasDrawCompleteEvent());
+      activeChannel_ = coords.getChannel();
+      if (displaySettings_.getChannelColorMode() != DisplaySettings.ColorMode.COMPOSITE) {
+         setOneChannelVisible(coords.getChannel());
+      }
+      clearVolumeRenderer_.setCurrentRenderLayer(coords.getChannel());
+      drawVolume(coords.getTime());
+      displayBus_.post(new CanvasDrawCompleteEvent());
    }
 
    @Override
