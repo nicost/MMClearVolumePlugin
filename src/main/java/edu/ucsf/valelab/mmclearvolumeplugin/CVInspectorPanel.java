@@ -202,7 +202,7 @@ public final class CVInspectorPanel extends InspectorPanel {
          zSlider_.setUpperValue(clipValToSliderVal(clipBox[5]));
       }
       Coords intendedDimensions = viewer_.getDatastore().getSummaryMetadata().getIntendedDimensions();
-      if (intendedDimensions != null && intendedDimensions.getTime() > 1) {
+      if (intendedDimensions != null) {
          if (sp_ != null) {
             sp_.stopUpdateThread();
             this.remove(sp_);
@@ -210,6 +210,8 @@ public final class CVInspectorPanel extends InspectorPanel {
          sp_ = new ScrollerPanel(studio_, viewer_.getDatastore(), viewer_);
          add(sp_, "span x 4, growx, wrap");
       } 
+      super.revalidate();
+      super.repaint();
       viewer_.updateHistograms();
    }
    
