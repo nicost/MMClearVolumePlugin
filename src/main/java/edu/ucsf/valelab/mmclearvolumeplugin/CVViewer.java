@@ -61,6 +61,7 @@ import org.micromanager.display.DisplayWindow;
 import org.micromanager.display.HistogramData;
 import org.micromanager.display.NewDisplaySettingsEvent;
 import org.micromanager.display.NewHistogramsEvent;
+import org.micromanager.events.ShutdownCommencingEvent;
 
 
 
@@ -289,6 +290,7 @@ public class CVViewer implements DataViewer {
       displayBus_.register(this);
       store_.registerForEvents(this);
       studio_.getDisplayManager().addViewer(this);
+      studio_.events().registerForEvents(this);
                   
       // Ensure there are histograms for our display.
       if (open_) {
@@ -316,16 +318,7 @@ public class CVViewer implements DataViewer {
       cvFrame_.addWindowListener(new WindowAdapter() {
          @Override
          public void windowClosing(WindowEvent e) {
-            UserProfile profile = studio_.profile();
-            profile.setInt(ourClass_, XLOC, cvFrame_.getX());
-            profile.setInt(ourClass_, YLOC, cvFrame_.getY());
-            studio_.getDisplayManager().removeViewer(ourViewer);
-            // studio_.events().post(new DisplayDestroyedEvent(ourViewer) {});
-            displayBus_.unregister(ourViewer);
-            store_.unregisterForEvents(ourViewer);
-            clearVolumeRenderer_.close();
-            cvFrame_.dispose();
-            open_ = false;
+            cleanup();
          }
 
          @Override
@@ -334,7 +327,20 @@ public class CVViewer implements DataViewer {
       });
 
    }
-   
+
+   private void cleanup() {
+      UserProfile profile = studio_.profile();
+      profile.setInt(ourClass_, XLOC, cvFrame_.getX());
+      profile.setInt(ourClass_, YLOC, cvFrame_.getY());
+      studio_.getDisplayManager().removeViewer(this);
+      displayBus_.unregister(this);
+      store_.unregisterForEvents(this);
+      studio_.events().unregisterForEvents(this);
+      clearVolumeRenderer_.close();
+      cvFrame_.dispose();
+      open_ = false;
+   }
+
    private void setOneChannelVisible(int chToBeVisible) {
       for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++) {
          boolean setVisible = false;
@@ -831,6 +837,13 @@ public class CVViewer implements DataViewer {
             }
             imgCounter_ = 0;
          }
+      }
+   }
+   
+   @Subscribe
+   public void onShutdownCommencing(ShutdownCommencingEvent sce) {
+      if (cvFrame_ != null) {
+         cleanup();
       }
    }
 }
