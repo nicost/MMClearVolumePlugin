@@ -111,14 +111,16 @@ public class CVViewer implements DataViewer {
       UserProfile profile = studio_.getUserProfile();
       if (store == null) {
          clonedDisplay_ = studio_.displays().getCurrentWindow();
-         store_ = clonedDisplay_.getDatastore();
-         name_ = clonedDisplay_.getName() + "-ClearVolume";
+         if (clonedDisplay_ != null) {
+            store_ = clonedDisplay_.getDatastore();
+            name_ = clonedDisplay_.getName() + "-ClearVolume";
+         }
       } else {
          store_ = store;
          clonedDisplay_ = getDisplay(store_);
-         if (clonedDisplay_ != null)
+         if (clonedDisplay_ != null) {
             name_ = clonedDisplay_.getName() + "-ClearVolume";
-
+         }
       }
       displayBus_ = new EventBus();
       cvFrame_ = new JFrame();
@@ -128,7 +130,7 @@ public class CVViewer implements DataViewer {
       coordsBuilder_ = studio_.data().getCoordsBuilder();
       
       if (store_ == null) {
-         ij.IJ.error("No data set open");
+         studio_.logs().showMessage("No data set open");
          return;
       }
       
