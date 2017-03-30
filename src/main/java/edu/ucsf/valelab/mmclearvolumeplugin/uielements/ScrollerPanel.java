@@ -81,6 +81,7 @@ public class ScrollerPanel extends JPanel {
    private double animationFPS_ = 3.0;
    private int animationStepSize_ = 0;
    private long lastAnimationTimeMs_ = 0;
+   private static final int MAXFPS = 30;
    
    private final String CV_ANIMATION_FPS = "Animation fps";
 
@@ -325,15 +326,16 @@ public class ScrollerPanel extends JPanel {
    @Subscribe
    public void onNewDisplaySettings(NewDisplaySettingsEvent event) {
       if ( event.getDisplay() instanceof CVViewer ) {
-      DisplaySettings settings = event.getDisplaySettings();
-      if (settings.getAnimationFPS() != null &&
-            settings.getAnimationFPS() != animationFPS_) {
-         animationFPS_ = settings.getAnimationFPS();
-         fpsButton_.setText("FPS: " + animationFPS_);
-         updateAnimation();
-         studio_.profile().setDouble(this.getClass(), CV_ANIMATION_FPS, 
+         DisplaySettings settings = event.getDisplaySettings();
+         if (settings.getAnimationFPS() != null &&
+                     settings.getAnimationFPS() != animationFPS_) {
+            animationFPS_ = settings.getAnimationFPS();
+            animationFPS_ = Math.min(animationFPS_, MAXFPS);
+            fpsButton_.setText("FPS: " + animationFPS_);
+            updateAnimation();
+            studio_.profile().setDouble(this.getClass(), CV_ANIMATION_FPS, 
                  animationFPS_);
-      }
+         }
       }
    }
    
@@ -365,8 +367,8 @@ public class ScrollerPanel extends JPanel {
    private void runUpdateThread() {
       while(!shouldStopUpdates_.get()) {
          try {
-            // Limit ourselves to about 30FPS.
-            Thread.sleep(1000/30);
+            // Limit ourselves to about 30 FPS.
+            Thread.sleep(1000/MAXFPS);
          }
          catch (InterruptedException e) {} // Ignore it.
          Coords coords = null;
@@ -540,7 +542,7 @@ public class ScrollerPanel extends JPanel {
       // by for each animation tick. We cap at an update rate of 30FPS;
       // past that, we step forward by more than one image per step to
       // compensate.
-      int updateFPS = Math.min(30, (int) animationFPS_);
+      int updateFPS = Math.min(MAXFPS, (int) animationFPS_);
       animationStepSize_ = (int) Math.max(1,
             Math.round(updateFPS * animationFPS_ / 1000.0));
 
