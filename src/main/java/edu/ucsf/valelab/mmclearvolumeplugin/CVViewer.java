@@ -38,6 +38,8 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
+import java.nio.Buffer;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -145,7 +147,10 @@ public class CVViewer implements DataViewer {
       final int nrImages = store_.getImagesMatching(zStackCoords).size();
       currentlyShownTimePoint_ = -1; // set to make sure the first volume will be drawn
       Coords intendedDimensions = store_.getSummaryMetadata().getIntendedDimensions();
-      if (intendedDimensions != null && nrImages == intendedDimensions.getChannel() * intendedDimensions.getZ()) {
+      if (store_.getIsFrozen()) {
+          initializeRenderer(0);
+      } else if (intendedDimensions != null && 
+              nrImages >= intendedDimensions.getChannel() * intendedDimensions.getZ()) {
          initializeRenderer(0);
       } else if (intendedDimensions == null) {
          initializeRenderer(0);
@@ -568,6 +573,13 @@ public class CVViewer implements DataViewer {
             // add the contiguous memory as fragment:
             if (image != null)
                fragmentedMemory.add(image.getPixelBuffer());
+            else {
+                // if the image is missing, replace with pixels initialized to 0
+                fragmentedMemory.add(ByteBuffer.allocateDirect(
+                        randomImage.getHeight() * 
+                        randomImage.getWidth() * 
+                        randomImage.getBytesPerPixel() ) );
+            }
          }
 
          // TODO: correct x and y voxel sizes using aspect ratio
