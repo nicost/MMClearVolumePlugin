@@ -25,8 +25,8 @@ import com.jogamp.newt.awt.NewtCanvasAWT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.jogamp.newt.NewtFactory;
-import coremem.fragmented.FragmentedMemory;
-import coremem.types.NativeTypeEnum;
+import coremem.enums.NativeTypeEnum;
+import coremem.offheap.OffHeapMemory;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 
@@ -38,7 +38,6 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -562,7 +561,11 @@ public class CVViewer implements DataViewer {
       if (displaySettings_.getShouldAutostretch())
          autostretch();
       for (int ch = 0; ch < nrCh; ch++) {
-         FragmentedMemory fragmentedMemory = new FragmentedMemory();
+         int bytesPerFrame = randomImage.getBytesPerPixel() * 
+                 randomImage.getHeight() * 
+                 randomImage.getWidth();
+         OffHeapMemory tempMem = new OffHeapMemory(nrZ * bytesPerFrame);
+                 
          for (int i = 0; i < nrZ; i++) {
             coordsBuilder_ = coordsBuilder_.z(i).channel(ch).time(timePoint).stagePosition(0);
             Coords coords = coordsBuilder_.build();
@@ -571,11 +574,11 @@ public class CVViewer implements DataViewer {
             DefaultImage image = (DefaultImage) store_.getImage(coords);
 
             // add the contiguous memory as fragment:
-            if (image != null)
-               fragmentedMemory.add(image.getPixelBuffer());
-            else {
+            if (image != null) {
+               tempMem.subRegion(i * bytesPerFrame, bytesPerFrame).copyFrom(image.getPixelBuffer());
+            } else {
                 // if the image is missing, replace with pixels initialized to 0
-                fragmentedMemory.add(ByteBuffer.allocateDirect(
+                tempMem.copyFrom(ByteBuffer.allocateDirect (
                         randomImage.getHeight() * 
                         randomImage.getWidth() * 
                         randomImage.getBytesPerPixel() ) );
@@ -584,17 +587,20 @@ public class CVViewer implements DataViewer {
 
          // TODO: correct x and y voxel sizes using aspect ratio
          double pixelSizeUm = metadata.getPixelSizeUm();
-         if (pixelSizeUm == 0.0)
+         if (pixelSizeUm == 0.0) {
             pixelSizeUm = 1.0;
+         }
          Double stepSizeUm = summary.getZStepUm();
-         if (stepSizeUm == null || stepSizeUm == 0.0)
+         if (stepSizeUm == null || stepSizeUm == 0.0) {
             stepSizeUm = 1.0;
+         }
          
          // pass data to renderer: (this call takes a long time!)
          clearVolumeRenderer_.setVolumeDataBuffer(0, 
                  TimeUnit.SECONDS, 
                  ch,
-                 fragmentedMemory,
+                 // fragmentedMemory,
+                 tempMem.getByteBuffer(),
                  randomImage.getWidth(),
                  randomImage.getHeight(),
                  nrZ, 
