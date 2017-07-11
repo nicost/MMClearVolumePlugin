@@ -25,8 +25,8 @@ import com.jogamp.newt.awt.NewtCanvasAWT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.jogamp.newt.NewtFactory;
+import coremem.enums.NativeTypeEnum;
 import coremem.fragmented.FragmentedMemory;
-import coremem.types.NativeTypeEnum;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 
@@ -38,7 +38,6 @@ import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowFocusListener;
-import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
