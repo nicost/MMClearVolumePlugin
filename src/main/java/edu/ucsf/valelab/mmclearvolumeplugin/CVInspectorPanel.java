@@ -24,6 +24,7 @@ import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollerPanel;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -166,6 +167,11 @@ public final class CVInspectorPanel extends InspectorPanel {
          sp_ = new ScrollerPanel(studio_, viewer_.getDatastore(), viewer_);
          super.add(sp_, "span x 4, growx, wrap");
       }
+      
+      JButton snapButton = new JButton("Snap");  // TODO: add icon
+      snapButton.addActionListener((ActionEvent e) -> {
+         takeSnapShot();
+      });
 
       studio.events().registerForEvents(this);
    }
@@ -238,6 +244,10 @@ public final class CVInspectorPanel extends InspectorPanel {
       if (start) {
          
       }
+   }
+   
+   private void takeSnapShot() {
+      // TODO
    }
    
    private RangeSlider makeSlider(final int axis) {
