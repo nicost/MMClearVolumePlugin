@@ -127,6 +127,16 @@ public final class CVInspectorPanel extends InspectorPanel {
       });
       super.add(parmsButton, "wrap");
       
+      JButton snapButton = new JButton("Snap 3D"); 
+      snapButton.setToolTipText("Snapshot of 3D viewer");
+      snapButton.addActionListener( (ActionEvent e) -> {
+         if (getViewer() != null) {
+            CVSnapshot snapper = new CVSnapshot();
+            getViewer().attachRecorder(snapper);
+         }
+      });
+      super.add(snapButton, "wrap");
+      
       /*
       Controls do not seem to do anything....????
       JButton controlsButton = new JButton("Toggle Controls");

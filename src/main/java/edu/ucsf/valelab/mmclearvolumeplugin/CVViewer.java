@@ -16,6 +16,7 @@
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
 import clearvolume.renderer.ClearVolumeRendererInterface;
+import clearvolume.renderer.cleargl.recorder.VideoRecorderInterface;
 import clearvolume.renderer.factory.ClearVolumeRendererFactory;
 import clearvolume.transferf.TransferFunction1D;
 import clearvolume.transferf.TransferFunctions;
@@ -713,6 +714,11 @@ public class CVViewer implements DataViewer {
          clearVolumeRenderer_.setTranslationY(y);
          clearVolumeRenderer_.setTranslationZ(z);
       }
+   }
+   
+   public void attachRecorder(VideoRecorderInterface recorder) {
+      clearVolumeRenderer_.setVideoRecorder(recorder);
+      clearVolumeRenderer_.toggleRecording();
    }
    
    /**
