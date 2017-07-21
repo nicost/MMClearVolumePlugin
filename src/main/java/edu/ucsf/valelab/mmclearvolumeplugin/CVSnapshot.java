@@ -8,6 +8,7 @@ import ij.ImagePlus;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import javax.swing.SwingUtilities;
 
 /**
  *
@@ -30,7 +31,7 @@ public class CVSnapshot extends VideoRecorderBase {
       
       super.toggleActive();
 
-      new Thread  (() -> {
+      //Runnable dt = new Thread  (() -> {
          final int lWidth = pGLAutoDrawable.getSurfaceWidth();
          final int lHeight = pGLAutoDrawable.getSurfaceHeight();
          
@@ -41,6 +42,7 @@ public class CVSnapshot extends VideoRecorderBase {
          final GL lGL = pGLAutoDrawable.getGL();
          
          lGL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
+
          lGL.glReadPixels(0, // GLint x
                  0, // GLint y
                  lWidth, // GLsizei width
@@ -48,21 +50,24 @@ public class CVSnapshot extends VideoRecorderBase {
                  GL.GL_RGB, // GLenum format
                  GL.GL_UNSIGNED_BYTE, // GLenum type
                  lByteBuffer); // GLvoid *pixels
+
          mLastImageTimePoint = System.nanoTime();
          
-         BufferedImage lBufferedImage = getBufferedImage(lWidth, lHeight, lByteBuffer);
+         BufferedImage lBufferedImage = makeBufferedImage(lWidth, lHeight, lByteBuffer);
          
          ImagePlus ip = new ImagePlus("3D", lBufferedImage);
          ip.show();
-      }).start();
+      //});
+      
+      //SwingUtilities.invokeLater(dt);
 
       return true;
    }
    
-   private BufferedImage getBufferedImage(
-                                 int pWidth,
-                                 int pHeight,
-                                 ByteBuffer pByteBuffer)
+   public static BufferedImage makeBufferedImage(
+                                 final int pWidth,
+                                 final int pHeight,
+                                 final ByteBuffer pByteBuffer)
   {
     try
     {

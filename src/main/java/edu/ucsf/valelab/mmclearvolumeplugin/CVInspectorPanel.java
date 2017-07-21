@@ -30,6 +30,7 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 
 import net.miginfocom.swing.MigLayout;
@@ -131,8 +132,11 @@ public final class CVInspectorPanel extends InspectorPanel {
       snapButton.setToolTipText("Snapshot of 3D viewer");
       snapButton.addActionListener( (ActionEvent e) -> {
          if (getViewer() != null) {
-            CVSnapshot snapper = new CVSnapshot();
-            getViewer().attachRecorder(snapper);
+            Runnable dt = new Thread  (() -> {
+               CVSnapshot snapper = new CVSnapshot();
+               getViewer().attachRecorder(snapper);
+            });
+            SwingUtilities.invokeLater(dt);
          }
       });
       super.add(snapButton, "wrap");
