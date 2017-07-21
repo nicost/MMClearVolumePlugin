@@ -700,7 +700,7 @@ public class CVViewer implements DataViewer {
    }
    
    /**
-    * Resets the rotation so that the object ligns up with the xyz axis.
+    * Resets the rotation so that the object lines up with the xyz axis.
     */
    public void straighten() {
       if (clearVolumeRenderer_ != null) {
@@ -719,6 +719,8 @@ public class CVViewer implements DataViewer {
    public void attachRecorder(VideoRecorderInterface recorder) {
       clearVolumeRenderer_.setVideoRecorder(recorder);
       clearVolumeRenderer_.toggleRecording();
+      // Force an update of the display to start the recording immediately
+      clearVolumeRenderer_.addTranslationZ(0.0);
    }
    
    /**

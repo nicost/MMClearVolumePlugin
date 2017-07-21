@@ -8,7 +8,6 @@ import ij.ImagePlus;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import javax.swing.SwingUtilities;
 
 /**
  *
