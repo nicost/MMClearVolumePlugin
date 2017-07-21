@@ -25,8 +25,8 @@ import com.jogamp.newt.awt.NewtCanvasAWT;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.jogamp.newt.NewtFactory;
+import coremem.enums.NativeTypeEnum;
 import coremem.fragmented.FragmentedMemory;
-import coremem.types.NativeTypeEnum;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.events.CanvasDrawCompleteEvent;
 
