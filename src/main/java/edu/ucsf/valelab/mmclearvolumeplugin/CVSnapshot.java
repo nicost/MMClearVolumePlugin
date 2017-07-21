@@ -30,34 +30,30 @@ public class CVSnapshot extends VideoRecorderBase {
       
       super.toggleActive();
 
-      new Thread  (new Runnable() {
-         @Override
-         public void run() {
-            
-      final int lWidth = pGLAutoDrawable.getSurfaceWidth();
-      final int lHeight = pGLAutoDrawable.getSurfaceHeight();
-
-      ByteBuffer lByteBuffer
-              = ByteBuffer.allocateDirect(lWidth * lHeight * 3)
-              .order(ByteOrder.nativeOrder());
-
-      final GL lGL = pGLAutoDrawable.getGL();
-
-      lGL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
-      lGL.glReadPixels(0, // GLint x
-              0, // GLint y
-              lWidth, // GLsizei width
-              lHeight, // GLsizei height
-              GL.GL_RGB, // GLenum format
-              GL.GL_UNSIGNED_BYTE, // GLenum type
-              lByteBuffer); // GLvoid *pixels
-      mLastImageTimePoint = System.nanoTime();
-      
-      BufferedImage lBufferedImage = getBufferedImage(lWidth, lHeight, lByteBuffer);
-
-      ImagePlus ip = new ImagePlus("3D", lBufferedImage);
-      ip.show();
-         };
+      new Thread  (() -> {
+         final int lWidth = pGLAutoDrawable.getSurfaceWidth();
+         final int lHeight = pGLAutoDrawable.getSurfaceHeight();
+         
+         ByteBuffer lByteBuffer
+                 = ByteBuffer.allocateDirect(lWidth * lHeight * 3)
+                         .order(ByteOrder.nativeOrder());
+         
+         final GL lGL = pGLAutoDrawable.getGL();
+         
+         lGL.glPixelStorei(GL.GL_PACK_ALIGNMENT, 1);
+         lGL.glReadPixels(0, // GLint x
+                 0, // GLint y
+                 lWidth, // GLsizei width
+                 lHeight, // GLsizei height
+                 GL.GL_RGB, // GLenum format
+                 GL.GL_UNSIGNED_BYTE, // GLenum type
+                 lByteBuffer); // GLvoid *pixels
+         mLastImageTimePoint = System.nanoTime();
+         
+         BufferedImage lBufferedImage = getBufferedImage(lWidth, lHeight, lByteBuffer);
+         
+         ImagePlus ip = new ImagePlus("3D", lBufferedImage);
+         ip.show();
       }).start();
 
       return true;
