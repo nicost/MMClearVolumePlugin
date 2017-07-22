@@ -17,10 +17,13 @@
 
 package edu.ucsf.valelab.mmclearvolumeplugin;
 
+import edu.ucsf.valelab.mmclearvolumeplugin.recorder.CVSnapshot;
 import com.google.common.eventbus.Subscribe;
+import edu.ucsf.valelab.mmclearvolumeplugin.recorder.CVVideoRecorder;
 
 import edu.ucsf.valelab.mmclearvolumeplugin.slider.RangeSlider;
 import edu.ucsf.valelab.mmclearvolumeplugin.uielements.ScrollerPanel;
+import java.awt.Color;
 
 import java.awt.Dimension;
 import java.awt.event.ActionEvent;
@@ -128,18 +131,35 @@ public final class CVInspectorPanel extends InspectorPanel {
       });
       super.add(parmsButton, "wrap");
       
-      JButton snapButton = new JButton("Snap 3D"); 
+      final JButton snapButton = new JButton("Snap 3D"); 
       snapButton.setToolTipText("Snapshot of 3D viewer");
       snapButton.addActionListener( (ActionEvent e) -> {
          if (getViewer() != null) {
-            Runnable dt = new Thread  (() -> {
-               CVSnapshot snapper = new CVSnapshot();
-               getViewer().attachRecorder(snapper);
-            });
-            SwingUtilities.invokeLater(dt);
+            CVSnapshot snapper = new CVSnapshot();
+            getViewer().attachRecorder(snapper);
          }
       });
-      super.add(snapButton, "wrap");
+      super.add(snapButton);
+      
+      final JButton recordButton = new JButton("Record"); 
+      recordButton.setToolTipText("Record 3D viewer");
+      recordButton.setBackground(Color.red);
+      final CVVideoRecorder recorder = new CVVideoRecorder();
+      recordButton.addActionListener( (ActionEvent e) -> {
+         if (recordButton.getText().equals("Record")) {
+            snapButton.setEnabled(false);
+            recordButton.setText("Stop");
+            if (getViewer() != null) {
+               getViewer().attachRecorder(recorder);
+            }
+         } else {
+            snapButton.setEnabled(true);
+            recordButton.setText("Record");
+            recorder.stopRecording();
+         }
+      });
+
+      super.add(recordButton, "wrap");
       
       /*
       Controls do not seem to do anything....????

@@ -475,7 +475,7 @@ public class CVViewer implements DataViewer {
 
    @Override
    /**
-    * Assemble all images that are showing in our volume May need to be updated
+    * Assemble all images that are showing in our volume. May need to be updated
     * for multiple time points in the future
     */
    public List<Image> getDisplayedImages() {
@@ -529,7 +529,8 @@ public class CVViewer implements DataViewer {
    }
 
    /**
-    * This function is in CV 1.1.2, replace when updating Returns a transfer a
+    * This function is in CV 1.1.2, replace when updating.
+    * Returns a transfer a
     * simple transfer function that is a gradient from dark transparent to a
     * given color. The transparency of the given color is used.
     *
@@ -717,10 +718,20 @@ public class CVViewer implements DataViewer {
    }
    
    public void attachRecorder(VideoRecorderInterface recorder) {
-      clearVolumeRenderer_.setVideoRecorder(recorder);
-      clearVolumeRenderer_.toggleRecording();
-      // Force an update of the display to start the recording immediately
-      clearVolumeRenderer_.addTranslationZ(0.0);
+      Runnable dt = new Thread  (() -> {               
+         clearVolumeRenderer_.setVideoRecorder(recorder);
+         clearVolumeRenderer_.toggleRecording();
+         // Force an update of the display to start the recording immediately
+         clearVolumeRenderer_.addTranslationZ(0.0);
+      });
+      SwingUtilities.invokeLater(dt);
+   }
+   
+   public void toggleRecording() {
+      Runnable dt = new Thread(() -> {
+         clearVolumeRenderer_.toggleRecording();
+      });
+      SwingUtilities.invokeLater(dt);
    }
    
    /**
