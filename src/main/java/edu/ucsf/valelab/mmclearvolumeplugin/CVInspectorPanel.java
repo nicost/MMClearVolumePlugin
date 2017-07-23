@@ -41,7 +41,9 @@ import net.miginfocom.swing.MigLayout;
 import org.micromanager.Studio;
 import org.micromanager.data.Coords;
 import org.micromanager.display.DataViewer;
+import org.micromanager.display.DisplaySettings;
 import org.micromanager.display.InspectorPanel;
+import org.micromanager.display.NewDisplaySettingsEvent;
 import org.micromanager.events.AcquisitionStartedEvent;
 
 /**
@@ -52,7 +54,7 @@ public final class CVInspectorPanel extends InspectorPanel {
    private CVViewer viewer_;
    
    static public final int SLIDERRANGE = 256;
-   static public final int SLIDERPIXELWIDTH = 256;
+   static public final int SLIDERPIXELWIDTH = 296;
    static public final int XAXIS = 0;
    static public final int YAXIS = 1;
    static public final int ZAXIS = 2;
@@ -64,6 +66,7 @@ public final class CVInspectorPanel extends InspectorPanel {
    private ScrollerPanel sp_;
    private boolean animating_ = false;
    private final AtomicBoolean attachToNew_ = new AtomicBoolean(false);
+   private final CVVideoRecorder recorder_;
    
    public CVInspectorPanel(Studio studio) {
       super();
@@ -92,7 +95,7 @@ public final class CVInspectorPanel extends InspectorPanel {
             getViewer().resetRotationTranslation();
          }
       });
-      super.add(resetButton, "span 4, split 4");
+      super.add(resetButton, "span 4, split 4, center");
       
       
       JButton centerButton = new JButton("Center");
@@ -120,7 +123,7 @@ public final class CVInspectorPanel extends InspectorPanel {
             getViewer().toggleWireFrameBox();
          }
       });
-      super.add(showBoxButton, "span 4, split 4");
+      super.add(showBoxButton, "span 4, split 4, center");
       
       JButton parmsButton = new JButton("Toggle Parameters");
       parmsButton.setToolTipText("Toggle visibility of Parameters");
@@ -130,49 +133,7 @@ public final class CVInspectorPanel extends InspectorPanel {
          }
       });
       super.add(parmsButton, "wrap");
-      
-      final JButton snapButton = new JButton("Snap 3D"); 
-      snapButton.setToolTipText("Snapshot of 3D viewer");
-      snapButton.addActionListener( (ActionEvent e) -> {
-         if (getViewer() != null) {
-            CVSnapshot snapper = new CVSnapshot();
-            getViewer().attachRecorder(snapper);
-         }
-      });
-      super.add(snapButton);
-      
-      final JButton recordButton = new JButton("Record"); 
-      recordButton.setToolTipText("Record 3D viewer");
-      recordButton.setBackground(Color.red);
-      final CVVideoRecorder recorder = new CVVideoRecorder();
-      recordButton.addActionListener( (ActionEvent e) -> {
-         if (recordButton.getText().equals("Record")) {
-            snapButton.setEnabled(false);
-            recordButton.setText("Stop");
-            if (getViewer() != null) {
-               getViewer().attachRecorder(recorder);
-            }
-         } else {
-            snapButton.setEnabled(true);
-            recordButton.setText("Record");
-            recorder.stopRecording();
-         }
-      });
-
-      super.add(recordButton, "wrap");
-      
-      /*
-      Controls do not seem to do anything....????
-      JButton controlsButton = new JButton("Toggle Controls");
-      controlsButton.setToolTipText("Toggle visibility of Controls");
-      controlsButton.addActionListener((ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().toggleControlPanelDisplay();
-         }
-      });
-      add(controlsButton, "wrap");
-      */
-      
+     
       addLabel("X");
       xSlider_ = makeSlider(XAXIS);
       super.add(xSlider_, "");
@@ -200,7 +161,40 @@ public final class CVInspectorPanel extends InspectorPanel {
          sp_ = new ScrollerPanel(studio_, viewer_.getDatastore(), viewer_);
          super.add(sp_, "span x 4, growx, wrap");
       }
-
+      
+      final JButton snapButton = new JButton("Snap 3D"); 
+      snapButton.setToolTipText("Snapshot of 3D viewer");
+      snapButton.addActionListener( (ActionEvent e) -> {
+         if (getViewer() != null) {
+            CVSnapshot snapper = new CVSnapshot();
+            getViewer().attachRecorder(snapper);
+         }
+      });
+      super.add(snapButton, "span 4, split 2, center");
+      
+      final JButton recordButton = new JButton("Record"); 
+      recordButton.setToolTipText("Record 3D viewer");
+      recordButton.setContentAreaFilled(false);
+      recordButton.setOpaque(true);
+      recordButton.setBackground(Color.green);
+      recorder_ = new CVVideoRecorder();
+      recordButton.addActionListener((ActionEvent e) -> {
+         if (recordButton.getText().equals("Record")) {
+            snapButton.setEnabled(false);
+            recordButton.setBackground(Color.red);
+            recordButton.setText("Stop Recording");
+            if (getViewer() != null) {
+               getViewer().attachRecorder(recorder_);
+            }
+         } else {
+            snapButton.setEnabled(true);
+            recordButton.setText("Record");
+            recordButton.setBackground(Color.green);
+            recorder_.stopRecording();
+         }
+      });
+      super.add(recordButton, "wrap");
+      
       studio.events().registerForEvents(this);
    }
    
@@ -223,6 +217,9 @@ public final class CVInspectorPanel extends InspectorPanel {
       // although this should always be a valid viewer, check anyways
       if (! (viewer instanceof CVViewer) )
          return;
+      
+      // TODO: do we need to unregister the old viewer???
+      
       viewer_ = (CVViewer) viewer;
       
       // update range sliders with clipped region of current viewer
@@ -247,6 +244,15 @@ public final class CVInspectorPanel extends InspectorPanel {
       super.revalidate();
       super.repaint();
       viewer_.updateHistograms();
+      viewer_.registerForEvents(this);
+   }
+   
+   @Subscribe
+   public void OnNewDisplaySettinsgEvent(NewDisplaySettingsEvent ndse) {
+      if (viewer_.equals(ndse.getDisplay())) {
+         DisplaySettings displaySettings = ndse.getDisplaySettings();
+         recorder_.setTargetFrameRate(displaySettings.getAnimationFPS());
+      }
    }
    
    private static int clipValToSliderVal (float clipVal) {
@@ -292,7 +298,7 @@ public final class CVInspectorPanel extends InspectorPanel {
     
     private void addLabel(String labelText) {
       JLabel label = new JLabel(labelText);
-      add(label, "");
+      add(label, "span 3, split 2");
     }
     
     

@@ -64,6 +64,8 @@ import org.micromanager.data.internal.DefaultCoords;
  */
 public class ScrollerPanel extends JPanel {
 
+   private static final long serialVersionUID = -2504635696950982031L;
+
    private final Studio studio_;
    private final Datastore store_;
    private final DataViewer display_;
@@ -555,8 +557,9 @@ public class ScrollerPanel extends JPanel {
             lastAnimationTimeMs_ = System.currentTimeMillis();
             shouldPostEvents_ = false;
             for (String axis : axisToState_.keySet()) {
-                if (axisToState_.get(axis).isAnimated_)
+                if (axisToState_.get(axis).isAnimated_) {
                     advancePosition(axis, animationStepSize_);
+                }
             }
             shouldPostEvents_ = true;
             postDrawEvent();
@@ -625,6 +628,8 @@ public class ScrollerPanel extends JPanel {
     * This class shows a popup menu to set the exact location of an axis.
     */
    public class PositionPopup extends JPopupMenu {
+      private static final long serialVersionUID = -9058662228484402861L;
+      
       public PositionPopup(final String axis, JButton button) {
          super.add(new JLabel("Set index: "));
          final JTextField field = new JTextField(button.getText());

@@ -57,7 +57,9 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin, InspectorPl
          CVViewer viewer = new CVViewer(studio_);
          viewer.register();
       } catch (Exception ex) {
-         ex.printStackTrace();
+         if (studio_ != null) {
+            studio_.logs().logError(ex);
+         }
       }
 
 
@@ -86,7 +88,7 @@ public class ClearVolumePlugin implements MenuPlugin, SciJavaPlugin, InspectorPl
    @Override
    public InspectorPanel createPanel() {
       CVInspectorPanel cvPanel =  new CVInspectorPanel(studio_);
-      
+      studio_.events().registerForEvents(cvPanel);
       return cvPanel;
    }
 

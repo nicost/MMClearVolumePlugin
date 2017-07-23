@@ -44,11 +44,16 @@ import org.micromanager.display.DisplaySettings;
  * animations for the ScrollerPanel.
  */
 public class FPSPopupMenu extends JPopupMenu {
+
+   private static final long serialVersionUID = 4641161742032383931L;
    /**
     * Implementation adapted from
     * http://www.onjava.com/pub/a/onjava/excerpt/swing_14/index6.html?page=2
     */
    private class FPSSlider extends JSlider implements MenuElement {
+
+      private static final long serialVersionUID = 5545890245575026993L;
+      
       public FPSSlider() {
          super(1, 30);
       }
