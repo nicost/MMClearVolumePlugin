@@ -33,7 +33,6 @@ import javax.swing.JCheckBox;
 import javax.swing.JLabel;
 import javax.swing.JSeparator;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 
 import net.miginfocom.swing.MigLayout;
@@ -51,6 +50,9 @@ import org.micromanager.events.AcquisitionStartedEvent;
  * @author nico
  */
 public final class CVInspectorPanel extends InspectorPanel {
+
+   private static final long serialVersionUID = 2048658391111857080L;
+
    private CVViewer viewer_;
    
    static public final int SLIDERRANGE = 256;
@@ -195,7 +197,6 @@ public final class CVInspectorPanel extends InspectorPanel {
       });
       super.add(recordButton, "wrap");
       
-      studio.events().registerForEvents(this);
    }
    
    @Override
