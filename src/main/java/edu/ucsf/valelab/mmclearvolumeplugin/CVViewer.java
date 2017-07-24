@@ -560,8 +560,9 @@ public class CVViewer implements DataViewer {
 
       // long startTime = System.currentTimeMillis();
       clearVolumeRenderer_.setVolumeDataUpdateAllowed(false);
-      if (displaySettings_.getShouldAutostretch())
+      if (displaySettings_.getShouldAutostretch()) {
          autostretch();
+      }
       for (int ch = 0; ch < nrCh; ch++) {
          FragmentedMemory fragmentedMemory = new FragmentedMemory();
          for (int i = 0; i < nrZ; i++) {
@@ -572,9 +573,9 @@ public class CVViewer implements DataViewer {
             DefaultImage image = (DefaultImage) store_.getImage(coords);
 
             // add the contiguous memory as fragment:
-            if (image != null)
+            if (image != null) {
                fragmentedMemory.add(image.getPixelBuffer());
-            else {
+            } else {
                 // if the image is missing, replace with pixels initialized to 0
                 fragmentedMemory.add(ByteBuffer.allocateDirect(
                         randomImage.getHeight() * 
@@ -585,11 +586,13 @@ public class CVViewer implements DataViewer {
 
          // TODO: correct x and y voxel sizes using aspect ratio
          double pixelSizeUm = metadata.getPixelSizeUm();
-         if (pixelSizeUm == 0.0)
+         if (pixelSizeUm == 0.0) {
             pixelSizeUm = 1.0;
+         }
          Double stepSizeUm = summary.getZStepUm();
-         if (stepSizeUm == null || stepSizeUm == 0.0)
+         if (stepSizeUm == null || stepSizeUm == 0.0) {
             stepSizeUm = 1.0;
+         }
          
          // pass data to renderer: (this call takes a long time!)
          clearVolumeRenderer_.setVolumeDataBuffer(0, 
@@ -640,7 +643,7 @@ public class CVViewer implements DataViewer {
       // System.out.println("Start finishing after " + (System.currentTimeMillis() - startTime) + " ms");
       
       // We should be waiting here for the renderer to finish, however that call times out!
-      // clearVolumeRenderer_.waitToFinishAllDataBufferCopy(0, TimeUnit.SECONDS);
+      clearVolumeRenderer_.waitToFinishAllDataBufferCopy(0, TimeUnit.SECONDS);
       
       // System.out.println("Ended finishing after " + (System.currentTimeMillis() - startTime) + " ms");
      
@@ -778,8 +781,9 @@ public class CVViewer implements DataViewer {
    }
    
    public float[] getClipBox() {
-      if (clearVolumeRenderer_ != null)
+      if (clearVolumeRenderer_ != null) {
          return clearVolumeRenderer_.getClipBox();
+      }
       return null;
    }
 
