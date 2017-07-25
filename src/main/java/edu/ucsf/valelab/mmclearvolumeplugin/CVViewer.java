@@ -607,9 +607,6 @@ public class CVViewer implements DataViewer {
                  stepSizeUm);
 
 
-         //clearVolumeRenderer_.setVoxelSize(ch, pixelSizeUm,
-         //        pixelSizeUm, stepSizeUm);
-
          // Set various display options:
          // HACK: on occassion we get null colors, correct that problem here
          Color chColor = displaySettings_.getChannelColors()[ch];
@@ -636,17 +633,15 @@ public class CVViewer implements DataViewer {
          } catch (NullPointerException ex) {
             studio_.logs().showError(ex);
          }
-         // System.out.println("Finished assembling ch: " + ch + " after " + (System.currentTimeMillis() - startTime) + " ms");
       }
       currentlyShownTimePoint_ = timePoint;
       clearVolumeRenderer_.setVolumeDataUpdateAllowed(true);
-      // System.out.println("Start finishing after " + (System.currentTimeMillis() - startTime) + " ms");
       
-      // We should be waiting here for the renderer to finish, however that call times out!
-      clearVolumeRenderer_.waitToFinishAllDataBufferCopy(0, TimeUnit.SECONDS);
-      
-      // System.out.println("Ended finishing after " + (System.currentTimeMillis() - startTime) + " ms");
-     
+      // This call used to time out, now appears to work      
+      if (!clearVolumeRenderer_.waitToFinishAllDataBufferCopy(2, TimeUnit.SECONDS)) {
+         studio_.logs().logError("ClearVolume timed out after 2 seconds");
+      }
+  
    }
 
    /*
