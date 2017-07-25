@@ -161,6 +161,9 @@ public class CVViewer implements DataViewer {
    
    private void initializeRenderer(int timePoint) {
 
+      final double preferredGamma = 0.5; 
+      final int min = 0;
+      
       if (clonedDisplay_ == null) {
          // There could be a display attached to the store now
          clonedDisplay_ = getDisplay(store_);
@@ -184,7 +187,7 @@ public class CVViewer implements DataViewer {
          contrastSettings = new DisplaySettings.ContrastSettings[nrCh];
          for (int ch = 0; ch < store_.getAxisLength(Coords.CHANNEL); ch++) {
             contrastSettings[ch] = studio_.displays().
-                    getContrastSettings(0, maxValue_, 1.0, true);
+                    getContrastSettings(min, maxValue_, preferredGamma, true);
          }
       } else {
          for (int ch = 0; ch < contrastSettings.length; ch++) {
@@ -195,23 +198,22 @@ public class CVViewer implements DataViewer {
                     contrastSettings[ch].getContrastMins() == null ||
                     contrastSettings[ch].getContrastMins()[0] == null) {
                contrastSettings[ch] = studio_.displays().
-                       getContrastSettings(0, maxValue_, 1.0, true);
+                       getContrastSettings(min, maxValue_, preferredGamma, true);
             }
-            if (contrastSettings[ch].getContrastGammas() == null || 
+            else if (contrastSettings[ch].getContrastGammas() == null || 
                     contrastSettings[ch].getContrastGammas()[0] == null) {
                contrastSettings[ch] = studio_.displays().getContrastSettings(
                        contrastSettings[ch].getContrastMins()[0],
                        contrastSettings[ch].getContrastMaxes()[0], 
-                       1.0, 
+                       preferredGamma, 
                        contrastSettings[ch].getIsVisible());
             }
-            if (contrastSettings[ch].getIsVisible() == null) {
-               contrastSettings[ch] = studio_.displays().getContrastSettings(
+            
+            contrastSettings[ch] = studio_.displays().getContrastSettings(
                        contrastSettings[ch].getContrastMins()[0],
                        contrastSettings[ch].getContrastMaxes()[0],
-                       contrastSettings[ch].getContrastGammas()[0], 
+                       0.5 * contrastSettings[ch].getContrastGammas()[0], 
                        true);
-            }
          }
       }
       
@@ -272,9 +274,10 @@ public class CVViewer implements DataViewer {
              
       drawVolume(timePoint);
       displayBus_.post(new CanvasDrawCompleteEvent());
-      
       currentlyShownTimePoint_ = timePoint;
 
+      // Multi-Pass rendering is active by default but causes bugs in the display
+      clearVolumeRenderer_.toggleAdaptiveLOD();
       clearVolumeRenderer_.setVisible(true);
       clearVolumeRenderer_.requestDisplay();
       clearVolumeRenderer_.toggleControlPanelDisplay();
@@ -771,7 +774,7 @@ public class CVViewer implements DataViewer {
                     clipBox[4] = min;  clipBox[5] = max;
                     break;
          }
-         clearVolumeRenderer_.setClipBox(clipBox);         
+         clearVolumeRenderer_.setClipBox(clipBox); 
       }
    }
    
