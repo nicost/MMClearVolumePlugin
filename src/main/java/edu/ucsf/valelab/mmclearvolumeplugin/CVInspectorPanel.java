@@ -116,7 +116,7 @@ public final class CVInspectorPanel extends InspectorPanel {
             getViewer().straighten();
          }
       });
-      super.add(straightButton, "wrap");
+      super.add(straightButton);
       
       JButton showBoxButton = new JButton("Toggle Box");
       showBoxButton.setToolTipText("Toggle visibility of the wireFrame Box");
@@ -125,16 +125,7 @@ public final class CVInspectorPanel extends InspectorPanel {
             getViewer().toggleWireFrameBox();
          }
       });
-      super.add(showBoxButton, "span 4, split 4, center");
-      
-      JButton parmsButton = new JButton("Toggle Parameters");
-      parmsButton.setToolTipText("Toggle visibility of Parameters");
-      parmsButton.addActionListener((ActionEvent e) -> {
-         if (getViewer() != null) {
-            getViewer().toggleParametersListFrame();
-         }
-      });
-      super.add(parmsButton, "wrap");
+      super.add(showBoxButton, "wrap");
      
       addLabel("X");
       xSlider_ = makeSlider(XAXIS);
