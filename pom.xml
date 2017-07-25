@@ -13,6 +13,10 @@
    </properties>
 
    <repositories>
+       <repository>
+         <id>org.micromanager</id>
+         <url>http://valelab.ucsf.edu/~nico/maven</url>
+      </repository>
       <repository>
          <id>ClearVolume</id>
          <url>http://dl.bintray.com/clearvolume/ClearVolume</url>
@@ -20,10 +24,6 @@
       <repository>
          <id>CoreMem</id>
          <url>http://dl.bintray.com/clearcontrol/ClearControl</url>
-      </repository>
-      <repository>
-         <id>org.micromanager</id>
-         <url>http://valelab.ucsf.edu/~nico/maven</url>
       </repository>
       <repository>
          <id>imagej.public</id>
@@ -81,7 +81,7 @@
       <dependency>
          <groupId>net.clearvolume</groupId>
          <artifactId>clearvolume</artifactId>
-         <version>1.0-SNAPSHOT</version>
+         <version>1.0-MM-SNAPSHOT</version>
       </dependency>
       <dependency>
          <groupId>net.clearvolume</groupId>
