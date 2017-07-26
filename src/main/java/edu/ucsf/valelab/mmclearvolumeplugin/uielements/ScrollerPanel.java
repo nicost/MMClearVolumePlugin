@@ -113,19 +113,10 @@ public class ScrollerPanel extends JPanel {
       super.setMinimumSize(new Dimension(1, 1));
 
 
-      /* 
       // Although it would be nice to rely on AnimationFPS stored in the display-
       // setting, it is most often set too high for our use.  Better to keep a 
       // separate fps for 3D
-      
-      Double fps = display.getDisplaySettings().getAnimationFPS();
-      // Default to 5 if it's not set.
-      if (fps == null) {
-         fps = 5.0;
-         display.setDisplaySettings(display.getDisplaySettings().copy()
-               .animationFPS(fps).build());
-      }
-      */
+
       animationFPS_ = studio_.profile().getDouble(this.getClass(), 
               CV_ANIMATION_FPS, animationFPS_);
       fpsMenu_ = new FPSPopupMenu(display_, animationFPS_);
@@ -205,7 +196,7 @@ public class ScrollerPanel extends JPanel {
       });
       add(scrollbar, "shrinkx, growx, wrap");
 
-      /*
+      /* TODO:
       ScrollbarLockIcon lock = new ScrollbarLockIcon(axis, display_);
       add(lock, "grow 0");
 
@@ -213,7 +204,7 @@ public class ScrollerPanel extends JPanel {
             new ImageCoordsLinker(axis, display_, this),
             display_);
       add(linker, "grow 0, wrap");
-*/
+      */
       axisToState_.put(axis, new AxisState(positionButton, scrollbar, maxLabel));
 
 
@@ -327,7 +318,7 @@ public class ScrollerPanel extends JPanel {
     */
    @Subscribe
    public void onNewDisplaySettings(NewDisplaySettingsEvent event) {
-      if ( event.getDisplay() instanceof CVViewer ) {
+      if ( event.getDisplay().equals(display_) ) {
          DisplaySettings settings = event.getDisplaySettings();
          if (settings.getAnimationFPS() != null &&
                      settings.getAnimationFPS() != animationFPS_) {

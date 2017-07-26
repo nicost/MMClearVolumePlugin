@@ -103,6 +103,7 @@ public class FPSPopupMenu extends JPopupMenu {
       slider.initialize();
       final JTextField field = new JTextField(3);
       slider.setValue((int) initialVal);
+      field.setText(Integer.toString((int) initialVal));
       slider.addChangeListener((ChangeEvent event) -> {
          field.setText(Integer.toString(slider.getValue()));
          DisplaySettings settings = display.getDisplaySettings();
