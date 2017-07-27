@@ -1,53 +1,64 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-   <modelVersion>4.0.0</modelVersion>
-   <groupId>edu.ucsf.valelab.mmclearvolumeplugin</groupId>
-   <artifactId>MMClearVolumePlugin_</artifactId>
-   <packaging>jar</packaging>
-   <version>0.1-SNAPSHOT</version>
-   <name>MMClearVolumePlugin</name>
-   <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
-   <description>A Micro-Manager 2.0 plugin that opens Micro-Manager data in the ClearVolume 3D viewer</description>
-   <properties>
-      <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-   </properties>
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>edu.ucsf.valelab.mmclearvolumeplugin</groupId>
+    <artifactId>MMClearVolumePlugin_</artifactId>
+    <packaging>jar</packaging>
+    <version>0.1-SNAPSHOT</version>
+    <name>MMClearVolumePlugin</name>
+    <url>http://valelab.ucsf.edu/~nico/ijplugins</url>
+    <description>A Micro-Manager 2.0 plugin that opens Micro-Manager data in the ClearVolume 3D viewer</description>
+    <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
 
-   <repositories>
-       <repository>
-         <id>org.micromanager</id>
-         <url>http://valelab.ucsf.edu/~nico/maven</url>
-      </repository>
-      <repository>
-         <id>ClearVolume</id>
-         <url>http://dl.bintray.com/clearvolume/ClearVolume</url>
-      </repository>
-      <repository>
-         <id>CoreMem</id>
-         <url>http://dl.bintray.com/clearcontrol/ClearControl</url>
-      </repository>
-      <repository>
-         <id>imagej.public</id>
-         <url>http://maven.imagej.net/content/groups/public</url>
-      </repository>
-      <repository>
-         <id>clojars.org</id>
-         <url>http://clojars.org/repo</url>
-      </repository>
-   </repositories>
+    <repositories>
+        <repository>
+            <id>org.micromanager</id>
+            <url>http://valelab.ucsf.edu/~nico/maven</url>
+        </repository>
+        <repository>
+            <id>ClearVolume</id>
+            <url>http://dl.bintray.com/clearvolume/ClearVolume</url>
+        </repository>
+        <repository>
+            <id>CoreMem</id>
+            <url>http://dl.bintray.com/clearcontrol/ClearControl</url>
+        </repository>
+        <repository>
+            <id>imagej.public</id>
+            <url>http://maven.imagej.net/content/groups/public</url>
+        </repository>
+        <repository>
+            <id>clojars.org</id>
+            <url>http://clojars.org/repo</url>
+        </repository>
+    </repositories>
                                                         
 
-   <build>
-       <plugins>
-           <plugin>
-               <groupId>org.apache.maven.plugins</groupId>
-               <artifactId>maven-dependency-plugin</artifactId>
-               <configuration>
-                   <outputDirectory>
-                       ${project.build.directory}/cv_dependencies
-                   </outputDirectory>
-               </configuration>
-           </plugin>
-           <plugin>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>
+                                ${project.build.directory}/cv_dependencies
+                            </outputDirectory>
+                        </configuration>
+               
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                <groupId>org.apache.maven.plugins</groupId>
                <artifactId>maven-compiler-plugin</artifactId>
                <version>3.3</version>
