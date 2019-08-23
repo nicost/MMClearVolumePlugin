@@ -1,4 +1,7 @@
 # MMClearVolumePlugin
+
+Note: The code in this repository has moved into the [Micro-Manager 2.0-gamma repository](https://github.com/nicost/micro-manager/tree/ViewerPlusCV).  Do not use it other than for the README.
+
 [Micro-Manager](http://micro-manager.org) 2.0 plugin that opens datasets in the ClearVolume 3D viewer.  
 
 [ClearVolume](http://fiji.sc/ClearVolume) is a volume rendering library tailored to microscopy developed at the MPI-CBG in Dresden.  The MMClearVolume plugin 
